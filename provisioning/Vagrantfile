@@ -1,0 +1,145 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+
+Vagrant.configure(2) do |config|
+
+  config.vm.define "nginx1" do |nginx1|
+    nginx1.vm.box = "nrel/CentOS-6.5-x86_64"
+    nginx1.vm.hostname = "nginx1"
+    nginx1.vm.network "private_network", ip: "192.168.34.11"
+    nginx1.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./nginx1_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './nginx1_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './nginx1_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "nginx2" do |nginx2|
+    nginx2.vm.box = "nrel/CentOS-6.5-x86_64"
+    nginx2.vm.hostname = "nginx2"
+    nginx2.vm.network "private_network", ip: "192.168.34.12"
+    nginx2.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./nginx2_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './nginx2_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './nginx2_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web1" do |web1|
+    web1.vm.box="nrel/CentOS-6.5-x86_64"
+    web1.vm.hostname = "web1"
+    web1.vm.network "private_network", ip: "192.168.34.21"
+    web1.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web1_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web1_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web1_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web2" do |web2|
+    web2.vm.box = "nrel/CentOS-6.5-x86_64"
+    web2.vm.hostname = "web2"
+    web2.vm.network "private_network", ip: "192.168.34.31"
+    web2.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web2_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web2_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web2_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web3" do |web3|
+    web3.vm.box = "nrel/CentOS-6.5-x86_64"
+    web3.vm.hostname = "web3"
+    web3.vm.network "private_network", ip: "192.168.34.41"
+    web3.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web3_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web3_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web3_VirtualDisk1.vmdk']
+    end
+  end
+
+#  config.vm.define "postfix" do |postfix|
+#    postfix.vm.box = "nrel/CentOS-6.5-x86_64"
+#    postfix.vm.hostname = "postfix"
+#    postfix.vm.network "private_network", ip: "192.168.34.51"
+#    postfix.vm.provider "virtualbox" do |vb|
+#  end
+#
+#  config.vm.provision "ansible_local" do |ansible|
+#    ansible.playbook = "postfix.yml"
+#  end
+
+  config.vm.define "ha-web-mgmt" do |hawebmgmt|
+    hawebmgmt.vm.box = "nrel/CentOS-6.5-x86_64"
+    hawebmgmt.vm.hostname = "ha-web-mgmt"
+    hawebmgmt.vm.network :forwarded_port, guest: 22, host: 2221, id: "ssh", disabled: true
+    hawebmgmt.vm.network :forwarded_port, guest: 8084, host: 8084, id: "luci"
+    hawebmgmt.vm.network :forwarded_port, guest: 22, host: 2522, auto_correct: true
+    hawebmgmt.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.154", mac: "0800276E2225"
+    hawebmgmt.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.254", auto_config: false, mac: "080027DF4E70"
+    hawebmgmt.vm.network "private_network", bridge: "vboxnet13", ip: "10.16.143.154", virtualbox__intnet: true, mac: "080027373C36"
+    hawebmgmt.vm.network "private_network", bridge: "vboxnet13", auto_config: false, virtualbox__intnet: true, mac: "0800270B0839"
+    hawebmgmt.vm.synced_folder "/Users/grosshaa/Ansible/myplaybooks/provisioning", "/vagrant", type: "virtualbox"
+    #hawebmgmt.vm.provision "ansible_local" do |ansible|
+    #  ansible.playbook = "playbook.yml"
+    #end
+  end
+
+  config.vm.define "ha-web1" do |haweb1|
+    haweb1.vm.box = "nrel/CentOS-6.5-x86_64"
+    haweb1.vm.hostname = "ha-web1"
+    haweb1.vm.network :forwarded_port, guest: 22, host: 2222, id: "ssh", disabled: true
+    haweb1.vm.network :forwarded_port, guest: 22, host: 2523, auto_correct: true
+    haweb1.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.151", mac: "080027301373"
+    haweb1.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.251", auto_config: false, mac: "08002754B84D"
+    haweb1.vm.network "private_network", bridge: "vboxnet13", ip: "10.16.143.151", virtualbox__intnet: true, mac: "0800270B8C14"
+    haweb1.vm.network "private_network", bridge: "vboxnet13", auto_config: false, virtualbox__intnet: true, mac: "08002711A77E"
+    haweb1.vm.synced_folder "/Users/grosshaa/Ansible/myplaybooks/provisioning", "/vagrant", type: "virtualbox"
+    #haweb1.vm.provision "ansible_local" do |ansible|
+    #  ansible.playbook = "playbook.yml"
+    #end
+  end
+
+  config.vm.define "ha-web2" do |haweb2|
+    haweb2.vm.box = "nrel/CentOS-6.5-x86_64"
+    haweb2.vm.hostname = "ha-web2"
+    haweb2.vm.network :forwarded_port, guest: 22, host: 2200, id: "ssh", disabled: true
+    haweb2.vm.network :forwarded_port, guest: 22, host: 2524, auto_correct: true
+    haweb2.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.152", mac: "080027301373"
+    haweb2.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.252", auto_config: false, mac: "080027564534"
+    haweb2.vm.network "private_network", bridge: "vboxnet13", ip: "10.16.143.152", virtualbox__intnet: true, mac: "080027EB5112"
+    haweb2.vm.network "private_network", bridge: "vboxnet13", auto_config: false, virtualbox__intnet: true, mac: "08002751AC9A"
+    haweb2.vm.synced_folder "/Users/grosshaa/Ansible/myplaybooks/provisioning", "/vagrant", type: "virtualbox"
+    #haweb2.vm.provision "ansible_local" do |ansible|
+    #  ansible.playbook = "playbook.yml"
+    #end
+
+  end
+
+  config.vm.define "ha-web3" do |haweb3|
+    haweb3.vm.box = "nrel/CentOS-6.5-x86_64"
+    haweb3.vm.hostname = "ha-web3"
+    haweb3.vm.network :forwarded_port, guest: 22, host: 2224, id: "ssh", disabled: true
+    haweb3.vm.network :forwarded_port, guest: 22, host: 2525, auto_correct: true
+    haweb3.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.153", mac: "08002771FC93"
+    haweb3.vm.network "private_network", bridge: "vboxnet12", ip: "192.168.36.253", auto_config: false, mac: "080027ABF885"
+    haweb3.vm.network "private_network", bridge: "vboxnet13", ip: "10.16.143.153", virtualbox__intnet: true, mac: "0800276E4BB7"
+    haweb3.vm.network "private_network", bridge: "vboxnet13", auto_config: false, virtualbox__intnet: true, mac: "08002777AF2D"
+    haweb3.vm.synced_folder "/Users/grosshaa/Ansible/myplaybooks/provisioning", "/vagrant", type: "virtualbox"
+    #haweb3.vm.provision "ansible_local" do |ansible|
+    #  ansible.playbook = "playbook.yml"
+    #end
+  end
+
+end

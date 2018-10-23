@@ -1,0 +1,29 @@
+- name: amend /etc/hosts with hostname
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.0\.1\tpostfix\spostfix$'
+    line: '{{ facter_ipaddress_eth1 }} {{ facter_fqdn }} {{ facter_hostname }}'
+    backrefs: yes
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install postfix pacakges
+  yum: name="{{ item }}" state=present
+  with_items:
+    - postfix
+    - cyrus-sasl-plain
+
+- include_vars: vars/main.yml
+
+- name: Install main configuration file
+  template:
+    src: main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload postfix
+
+- name: Start and enable postfix
+  service: name=postfix state=restarted enabled=yes

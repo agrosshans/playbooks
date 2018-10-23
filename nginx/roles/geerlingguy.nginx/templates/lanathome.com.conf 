@@ -1,0 +1,15 @@
+# filename conf.d/lanathome.com.conf
+
+upstream lanathome.com {
+        server web1.lanathome.com:81 max_fails=2 fail_timeout=10;
+        server web2.lanathome.com:81 max_fails=2 fail_timeout=10;
+}
+ 
+server {
+        listen       81;
+        server_name  nginx.lanathome.com;
+ 
+        location / {
+            proxy_pass http://lanathome.com;
+        }
+}

@@ -1,0 +1,151 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: true
+
+  #  vars:
+  #  ansible_network_os: RedHat
+
+  tasks:
+  - name: openshift-postinstall | ensure SELINUX=enforcing
+    lineinfile:
+      path: /etc/selinux/config
+      regexp: '^SELINUX='
+      line: 'SELINUX=enforcing'
+
+  - name: openshift-postinstall | ensure SELINUXTYPE=targeted
+    lineinfile:
+      path: /etc/selinux/config
+      regexp: '^SELINUXTYPE='
+      line: 'SELINUXTYPE=targeted'
+
+  - name: openshift-postinstall | ensure NM_CONTROLLED is set to yes
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-enp0s3
+      regexp: '^NM_CONTROLLED='
+      line: 'NM_CONTROLLED=yes'
+
+  - name: openshift-postinstall | ensure PEERDNS is set to yes
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-enp0s3
+      regexp: '^PEERDNS='
+      line: 'PEERDNS=yes'
+
+  - name: openshift-postinstall | import RPM-GPG-KEY-CentOS-7
+    rpm_key:
+      state: present
+      key: /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+  - name: openshift-postinstall | install necessary packages
+    yum:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - wget
+      - git
+      - net-tools
+      - bind-utils
+      - yum-utils
+      - iptables-services
+      - bridge-utils
+      - bash-completion
+      - kexec-tools
+      - sos
+      - psacct
+
+  - name: openshift-postinstall | add EPEL repository
+    yum_repository:
+      name: epel
+      description: EPEL YUM repo
+      baseurl: https://dl.fedoraproject.org/pub/epel/$releasever/$basearch/
+
+  - name: openshift-postinstall | check file RPM-GPG-KEY-EPEL-7 presence
+    stat:
+      path: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+    register: gpgkeyepel7
+
+  - name: openshift-postinstall | get RPM-GPG-KEY-EPEL-7
+    uri:
+      url: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+      method: GET
+      dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+    when: gpgkeyepel7.stat.exists == False
+
+  - name: openshift-postinstall | import RPM-GPG-KEY-EPEL-7
+    rpm_key:
+      state: present
+      key: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+
+  - name: openshift-postinstall | enable EPEL repository
+    shell: sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+
+  - name: openshift-postinstall | install ansible pyOpenSSL
+    yum:
+      name: "{{ packages }}"
+      enablerepo: epel
+    vars:
+      packages:
+      - ansible
+      - pyOpenSSL
+
+  - name: openshift-postinstall | install docker
+    yum:
+      name: "{{ packages }}"
+      enablerepo: epel
+    vars:
+      packages:
+      - docker-1.13.1
+
+  - name: openshift-postinstall | ensure no present data or metadata on /dev/sdb
+    shell: /usr/sbin/wipefs -a /dev/sdb
+
+  - name: openshift-postinstall | remove previous docker-vg
+    lvg:
+      vg: docker-vg
+      pvs: /dev/sdb1
+      force: yes
+      state: absent
+
+  - name: openshift-postinstall | create the docker-pool
+    blockinfile:
+      path: /etc/sysconfig/docker-storage-setup
+      block: |
+        DEVS=/dev/sdb
+        VG=docker-vg
+
+  - name: openshift-postinstall | run docker-storage-setup
+    shell: /usr/bin/docker-storage-setup --reset
+
+# - name: openshift-postinstall | change insecure-registry subnet
+
+  - name: openshift-postinstall | enable and start the docker service
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: openshift-postinstall | upgrade all packages
+    yum:
+      name: '*'
+      state: latest
+    register: require_reboot
+
+  - name: openshift-postinstall | reboot systems
+    shell: /usr/sbin/shutdown -r now
+    async: 1
+    poll: 0
+    when: require_reboot is changed
+
+  - name: openshift-postinstall | pause the playbook for 15 seconds
+    pause:
+      seconds: 10
+    when: require_reboot is changed
+
+  - name: openshift-postinstall | wait for systems to reboot
+    wait_for_connection:
+      connect_timeout: 20
+      sleep: 5
+      delay: 5
+      timeout: 300
+    delegate_to: localhost
+    when: require_reboot is changed

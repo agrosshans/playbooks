@@ -1,0 +1,18 @@
+node1 ansible_host=192.168.33.11 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/node1/virtualbox/private_key 
+node2 ansible_host=192.168.33.21 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/node2/virtualbox/private_key 
+node3 ansible_host=192.168.33.31 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/node3/virtualbox/private_key 
+
+[webservers]
+node1
+
+[dbservers]
+node2
+node3
+
+[datacenter:children]
+webservers
+dbservers
+
+[datacenter:vars]
+ssh_user=vagrant
+ssh_pass=vagrant

@@ -1,0 +1,12 @@
+---
+# file: roles/common/tasks/ntp.yaml
+
+- name: Install ntp
+  yum: name=ntp state=present
+
+- name: Deploy ntp config
+  template: src=ntp.conf.j2 dest=/etc/ntp.conf 
+  notify: restart ntpd
+
+- name: Verify NTP Running
+  service: name=ntpd state=started

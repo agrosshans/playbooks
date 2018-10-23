@@ -1,0 +1,21 @@
+---
+
+- hosts: ha-web1
+
+  roles:
+    - { role: geerlingguy.git }
+    
+  tasks:
+    
+  - name: Install JQ from source (https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64)
+    git:
+      repo: ssh://git@github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+      dest: /usr/sbin/jq
+
+  - name: Ensure JQ is executable
+    file:
+      path: /usr/sbin/jq
+      owner: root
+      group: root
+      mode: 0755
+  

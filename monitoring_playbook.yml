@@ -1,0 +1,13 @@
+---
+
+- hosts: centos7-1.lanathome.com,centos7-2.lanathome.com
+  become: yes
+  gather_facts: true
+
+  vars:
+    ntp_daemon: ntpd.service
+    ntp_enabled: true
+  
+  roles:
+    - roles/common
+    - roles/monitoring

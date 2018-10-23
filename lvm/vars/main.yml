@@ -1,0 +1,20 @@
+---
+# defaults file for ansible-manage-lvm
+lvm_groups:
+  - vgname: data-vg
+    disks: /dev/sdb,/dev/sdc,/dev/sdd  #for multiple disks...../dev/sdb,/dev/sdc
+    create: true  #defines if VG should exist or be removed....true or false
+    lvnames:
+      - lvname: vol1
+        size: 5m  #define size of lvol...100%FREE, 10g, 1024 (megabytes by default)
+        create: true  #defines if lvol should exist or be removed...true or false
+        filesystem: ext4  #defines filesystem to format lvol as
+        mount: true  #defines if filesystem should be mounted
+        mntp: /mnt/vol1  #defines mountpoint for lvol
+      - lvname: vol2
+        size: 10m  #define size of lvol...100%FREE, 10g, 1024 (megabytes by default)
+        create: true  #defines if lvol should exist or be removed...true or false
+        filesystem: ext4  #defines filesystem to format lvol as
+        mount: true
+        mntp: /mnt/vol2  #defines mountpoint for lvol
+manage_lvm: true  #defines if LVM will be managed by role....default is false to ensure nothing is changed by accident.

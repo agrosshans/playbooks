@@ -1,0 +1,15 @@
+---
+# file: roles/common/handlers/main.yml
+- name: restart ntpd
+  service: name=ntpd state=restarted
+
+- name: restart httpd
+  service: name=httpd state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted
+  ignore_errors: yes
+
+- name: reload iptables
+  service: name=iptables state=reloaded
+  ignore_errors: yes

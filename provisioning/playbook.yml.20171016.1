@@ -1,0 +1,63 @@
+---
+- hosts: hawebmgmt
+  become: yes
+  remote_user: root
+
+  vars_files:
+    - vars/main.yml
+ 
+  roles:
+    - { role: samsixtyone.epel }
+      #    - { role: geerlingguy.firewall }
+
+  tasks:
+
+  # copy files/ifcfg-eth1 to remote hosts
+  - name: Step 2 Create the interface file for the public interface
+    copy:
+      src: ifcfg-eth1
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+      owner: root
+      group: root
+      mode: 0644
+
+  # copy files/ifcfg-eth2 to remote hosts
+  - name: Step 3 Create the interface file for the cluster interconnect
+    copy:
+      src: ifcfg-eth2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth2
+      owner: root
+      group: root
+      mode: 0644
+
+  # restart network service once ifcfg-eth* completion
+  - name: Step 4 Restart the network services to activate the changes
+    service:
+      name: network
+      state: restarted
+      args: eth2
+
+    service:
+      name: network
+      state: restarted
+      args: eth1
+
+  # copy files/hosts to remote hosts
+  - name: Step 5 Update /etc/hosts
+    copy:
+      src: hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+  # configure iptable
+  - name: configure iptables
+    include_role:
+      name: geerlingguy.firewall
+
+  # Install Cluster Management Software
+  - name: Install Cluster Management Software
+    yum:
+      name: "@High Availability Management"
+      state: present

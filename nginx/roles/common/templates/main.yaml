@@ -1,0 +1,8 @@
+---
+
+- template:
+    src: files/ntp.conf.j2
+    dest: /etc/ntp.conf
+    owner: root
+    group: root
+    mode: 0644

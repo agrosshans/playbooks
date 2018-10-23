@@ -1,0 +1,30 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  become_method: sudo
+  gather_facts: false
+
+  #  vars:
+  #  ansible_network_os: RedHat
+
+  tasks:
+
+  - name: uri_get
+    uri:
+      url: "{{ item.url }}{{ item.file }}"
+      dest: /home/ngr/"{{ item.file }}"
+      method: GET
+      status_code: 200,201,204,208
+    with_items:
+      - { url: "http://chamonix-meteo.com/chamonix-mont-blanc/meteo/prevision/matin/", file: previ_meteo_5_jours.php }
+      - { url: "http://chamonix-meteo.com/chamonix-mont-blanc/weather/forecast/morning/", file: 5_days_weather_forecast.php }
+    register: download_result
+    #changed_when: result.status != 200 or result.status != 201 or result.status != 208
+    failed_when: download_result.status not in [200,201,204,208]
+    #failed_when: result.status != 200 or result.status != 204
+    #failed_when: result.status not in [201,204]
+    #changed_when: download_result.status == 200
+
+  - debug:
+      msg: "debug?: {{ download_result }}"

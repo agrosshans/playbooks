@@ -1,0 +1,8 @@
+DEVICE="eth1"
+HWADDR={{ ansible_eth1.macaddress }}
+BOOTPROTO=static
+ONBOOT="yes"
+USERCTL=no
+IPADDR={{ ansible_eth1.ipv4.address }}
+NETMASK={{ ansible_eth1.ipv4.netmask }}
+GATEWAY={{ ansible_default_ipv4.gateway }}

@@ -1,0 +1,345 @@
+---
+- hosts: hawebmgmt
+  become: yes
+  remote_user: root
+
+  vars_files:
+    - vars/main.yml
+ 
+  roles:
+    - { role: samsixtyone.epel }
+
+  tasks:
+
+  # copy templates/ifcfg-eth1 to remote hosts
+  - name: Create ifcfg-eth1
+    template:
+      src: ifcfg-eth1.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+
+  # copy templates/ifcfg-eth3 to remote hosts
+  - name: Create ifcfg-eth3
+    template:
+      src: ifcfg-eth3.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth3
+
+  # restart network service once ifcfg-eth* completion
+  - name: Restart the network services to activate the changes
+    service:
+      name: network
+      state: restarted
+      args: eth1
+
+    service:
+      name: network
+      state: restarted
+      args: eth3
+
+  # copy files/hosts to remote hosts
+  - name: Step 5 Update /etc/hosts
+    copy:
+      src: hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+  # configure iptable
+  - name: Step 6 configure iptables
+    include_role:
+      name: geerlingguy.firewall
+
+  # Install Cluster Management Software
+  - name: Step 7 Install Cluster Management Software
+    yum:
+      name: "@High Availability Management"
+      state: present
+
+  # Update the node to take in the latest patches and security updates
+  - name: Update each node to take in the latest patches and security updates
+    yum:
+      name: '*'
+      state: latest
+
+- hosts: ha-web1 haweb2 haweb3
+  become: yes
+  remote_user: root
+
+  tasks:
+
+  # Update each node to take in the latest patches and security updates
+  - name: Update each node to take in the latest patches and security updates
+    yum:
+      name: '*'
+      state: latest
+    tags: updates
+
+  # copy templates/ifcfg-eth1 to remote hosts
+  - name: Create ifcfg-eth1
+    template:
+      src: ifcfg-eth1.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+      #when: ({{ ansible_bond0 }}) is undefined # run: ansible ha-web1 -i inventory -m setup -a 'filter(xxx)' to see if it's define
+    ignore_errors: yes
+      
+
+  # copy templates/ifcfg-eth2 to remote hosts
+  - name: Create ifcfg-eth2
+    template:
+      src: ifcfg-eth2.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth2
+
+  # copy templates/ifcfg-eth3 to remote hosts
+  - name: Create ifcfg-eth3
+    template:
+      src: ifcfg-eth3.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth3
+    ignore_errors: yes
+      
+
+   # copy templates/ifcfg-eth4 to remote hosts
+  - name: Create ifcfg-eth4
+    template:
+      src: ifcfg-eth4.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth4
+
+  # restart network service once ifcfg-eth* completion
+  - name: Step 4 Restart the network services to activate the changes
+    service:
+      name: network
+      state: restarted
+      args: eth1
+
+    service:
+      name: network
+      state: restarted
+      args: eth2
+ 
+    service:
+      name: network
+      state: restarted
+      args: eth3
+
+    service:
+      name: network
+      state: restarted
+      args: eth4
+
+  # Create bond configuration files for the public and cluster interconnect networks
+  - name: Create bond configuration files for the public and cluster interconnect networks
+    blockinfile:
+         path: /etc/modprobe.d/bonding.conf 
+         create: yes
+         block: |
+          alias bond0 bonding
+          alias bond1 bonding
+
+
+  # Create ifcfg-bondX
+  - name: Create ifcfg-bond0
+    template:
+      src: ifcfg-bond0.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-bond0
+      #when: ({{ ansible_bond0 }} is defined)
+    ignore_errors: yes
+
+  - name: Create ifcfg-bond1
+    template:
+      src: ifcfg-bond1.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-bond1
+      #when: ({{ ansible_bond1 }} is defined)
+    ignore_errors: yes
+
+  # Modify the previous setup of ifcfg-ethX to refers the bonding
+  - name: Modify the interface file for the first public interface
+    template:
+      src: ifcfg-eth1-bond.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+
+  - name: Modify the interface file for the cluster interconnect
+    template:
+      src: ifcfg-eth3-bond.j2
+      dest: /etc/sysconfig/network-scripts/ifcfg-eth3
+
+
+  # restart network service once ifcfg-ethX completion
+  - name: Restart the network services to activate the changes
+    service:
+      name: network
+      state: restarted
+      args: eth1
+
+    service:
+      name: network
+      state: restarted
+      args: eth2
+
+    service:
+      name: network
+      state: restarted
+      args: eth3
+
+    service:
+      name: network
+      state: restarted
+      args: eth4
+
+  # copy files/hosts to remote hosts
+  - name: Update /etc/hosts
+    copy:
+      src: hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+  # configure iptables for webservice clusters
+  - name: Configure Firewall for webservice clusters
+    template:
+      src: haweb-iptables.j2
+      dest: /etc/sysconfig/iptables
+
+  - name: Reload Firewall for webservice clusters
+    service:
+      name: iptables
+      enabled: yes
+      state: restarted
+  
+  # Install Cluster Node Software
+  - name: Step 1 Install Cluster Management Software
+    yum:
+      name: "@High Availability"
+      state: present
+
+  # Install iscsi-initiator-utils
+  - name: install iscsi-initiator-utils
+    yum:
+      name: iscsi-initiator-utils
+      state: latest
+
+  # Start iSCSI service
+  - name: start iSCSI service and enable it
+    service:
+      name: iscsi
+      state: started
+      enabled: yes
+
+  # Install Multipathing
+  - name: Install Multipathing
+    yum:
+      name: device-mapper-multipath.x86_64
+      state: latest
+
+  # Start Multipathing daemon
+  - name: Start Multipathing daemon
+    service:
+      name: multipathd
+      state: started
+      enabled: yes
+
+  # iSCSI Discovering Targets
+  - name: iSCSI Discovering Targets
+    command: iscsiadm -m discovery -t st -p 192.168.1.199:3260
+
+  # iSCSI log into an individual target
+  - name: iSCSI log into an individual target
+    command: iscsiadm -m node -l -T iqn.1992-04.com.emc:storage.ix2-200-THUBCE.iscsi0 -p 192.168.1.199:3260
+
+##  # Configure Multipathing
+##  - name: Configure Multipathing
+##    command: /sbin/mpathconf --enable --user_friendly_names n --with_multipathd y
+
+  - name: Configure Multipathing 
+    copy:
+      remote_src: yes
+      src: /usr/share/doc/device-mapper-multipath-0.4.9/multipath.conf
+      dest: /etc/multipath.conf
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: turn user_friendly_names to no
+    lineinfile:
+      path: /etc/multipath.conf
+      regexp: '	user_friendly_names yes'
+      line: '	user_friendly_names no'
+
+  # Restart Multipathing daemon
+  - name: Restart Multipathing daemon
+    service:
+      name: multipathd
+      state: restarted
+      enabled: yes
+
+  - name: add a device wwid to the wwids file (/etc/multipath/wwids)
+    shell: multipath -a /dev/dm-2
+
+  - name: Wait 10 seconds to continue
+    wait_for:
+      timeout: 10
+      sleep: 5
+
+  - name: get the wwid from the wwids file (/etc/multipath/wwids)
+    shell: /bin/cat /etc/multipath/wwids  | tail -1 | sed -e 's/^\///' | sed -e 's/\/$//'
+    register: wwid
+
+    ##  - debug: msg="{{ wwid.stdout }}"
+
+  - name: copy template
+    vars:
+      InitiatorName: "{{ wwid.stdout }}"
+    template:
+      src: multipath.conf.j2
+      dest: /etc/multipath.conf
+
+  # Restart Multipathing daemon
+  - name: Restart Multipathing daemon
+    service:
+      name: multipathd
+      state: restarted
+      enabled: yes
+
+  - name: pvcreate /dev/mapper/ha-webp1
+    lvg:
+      vg: HA-Web-VG
+      pvs: /dev/mapper/ha-webp1
+      vg_options: "-cn"
+
+  - name: lvcreate ha-web-lvol1
+    lvol:
+      vg: HA-Web-VG
+      lv: ha-web-lvol1
+      size: 10G
+
+  # Create a ext2 filesystem on /dev/mapper/HA--Web--VG-ha--web--lvol1
+  - name: Create a ext4 filesystem on /dev/mapper/HA--Web--VG-ha--web--lvol1
+    filesystem:
+      fstype: ext4
+      dev: /dev/HA-Web-VG/ha-web-lvol1
+
+  # Mount /ha/ha-web
+  - name: Mount /ha/ha-web
+    mount:       
+      path: /ha/ha-web
+      src: /dev/HA-Web-VG/ha-web-lvol1
+      fstype: ext4
+      state: mounted
+
+##  # restricts the list of volumes available during system boot 
+##  - name: restricts the list of volumes available during system boot 
+##    lineinfile:
+##      path: /etc/lvm/lvm.conf
+##      insertafter: '# volume_list = [ "vg1", "vg2/lvol1", "@tag1", "@*" ]$'
+##      line: 'volume_list = [ “VolGroup”, “@ha-web1” ]'
+
+  # Update the initial ramdisk image so the block device modules are pre-loaded during boot
+  - name: Update the initial ramdisk image so the block device modules are pre-loaded during boot
+    command: dracut --hostonly --force /boot/initramfs-$(uname -r).img $(uname -r)
+
+  # Restart host after ramdisk LVM changes
+  - name: Restart host after ramdisk LVM changes
+    command: shutdown -r now "Activating ramdisk LVM changes"
+
+  - name: waiting 30 secs for server to come back
+    local_action: wait_for host={{ ansible_default_ipv4.address }} port=22 state=started delay=30 timeout=60
+    become: false

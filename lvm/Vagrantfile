@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+
+Vagrant.configure(2) do |config|
+
+  config.vm.define "node1" do |node1|
+    node1.vm.box = "nrel/CentOS-6.5-x86_64"
+    node1.vm.hostname = "node1"
+    node1.vm.network "private_network", ip: "192.168.33.11"
+    node1.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./Node1_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './Node1_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './Node1_VirtualDisk1.vmdk']
+    end
+  end
+
+
+  config.vm.define "node2" do |node2|
+    node2.vm.box="nrel/CentOS-6.5-x86_64"
+    node2.vm.hostname = "node2"
+    node2.vm.network "private_network", ip: "192.168.33.21"
+    node2.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./Node2_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './Node2_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './Node2_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "node3" do |node3|
+    node3.vm.box = "nrel/CentOS-6.5-x86_64"
+    node3.vm.hostname = "node3"
+    node3.vm.network "private_network", ip: "192.168.33.31"
+    node3.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./Node3_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './Node3_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './Node3_VirtualDisk1.vmdk']
+    end
+  end
+
+
+end

@@ -1,0 +1,71 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+
+Vagrant.configure(2) do |config|
+
+  config.vm.define "nginx1" do |nginx1|
+    nginx1.vm.box = "nrel/CentOS-6.5-x86_64"
+    nginx1.vm.hostname = "nginx1"
+    nginx1.vm.network "private_network", ip: "192.168.34.11"
+    nginx1.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./nginx1_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './nginx1_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './nginx1_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "nginx2" do |nginx2|
+    nginx2.vm.box = "nrel/CentOS-6.5-x86_64"
+    nginx2.vm.hostname = "nginx2"
+    nginx2.vm.network "private_network", ip: "192.168.34.12"
+    nginx2.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./nginx2_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './nginx2_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './nginx2_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web1" do |web1|
+    web1.vm.box="nrel/CentOS-6.5-x86_64"
+    web1.vm.hostname = "web1"
+    web1.vm.network "private_network", ip: "192.168.34.21"
+    web1.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web1_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web1_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web1_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web2" do |web2|
+    web2.vm.box = "nrel/CentOS-6.5-x86_64"
+    web2.vm.hostname = "web2"
+    web2.vm.network "private_network", ip: "192.168.34.31"
+    web2.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web2_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web2_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web2_VirtualDisk1.vmdk']
+    end
+  end
+
+  config.vm.define "web3" do |web3|
+    web3.vm.box = "nrel/CentOS-6.5-x86_64"
+    web3.vm.hostname = "web3"
+    web3.vm.network "private_network", ip: "192.168.34.41"
+    web3.vm.provider "virtualbox" do |vb|
+      unless File.exist?('./web3_VirtualDisk1.vmdk')
+        vb.customize ['createhd', '--filename', './web3_VirtualDisk1.vmdk', '--variant', 'Fixed', '--size', 1 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './web3_VirtualDisk1.vmdk']
+    end
+  end
+end

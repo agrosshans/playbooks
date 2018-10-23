@@ -1,0 +1,20 @@
+ha-web-mgmt ansible_host=127.0.0.1 ansible_port=2522 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant/machines/ha-web-mgmt/virtualbox/private_key 
+#
+ha-web1 ansible_host=127.0.0.1 ansible_port=2523 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant/machines/ha-web1/virtualbox/private_key 
+ha-web2 ansible_host=127.0.0.1 ansible_port=2524 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant/machines/ha-web2/virtualbox/private_key 
+ha-web3 ansible_host=127.0.0.1 ansible_port=2525 ansible_user=vagrant ansible_ssh_private_key_file=~/.vagrant/machines/ha-web3/virtualbox/private_key 
+#
+
+[machines]
+ha-web-mgmt
+ha-web1
+ha-web2
+ha-web3
+
+[mgmt]
+ha-web-mgmt
+
+[nodes]
+ha-web1
+ha-web2
+ha-web3

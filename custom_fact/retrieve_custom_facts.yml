@@ -1,0 +1,64 @@
+---
+
+- hosts: ha-web1
+  become: yes
+  gather_facts: no
+
+  vars:
+  - installation_prefix: /usr/local
+  - jq_version: 1.5
+
+  tasks:
+  - name: Download jq
+    get_url:
+     url: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-1.5.tar.gz
+     dest: /tmp/jq-1.5.tar.gz
+     mode: 755
+
+  - name: Unarchive a file that is already on the remote machine
+    unarchive:
+      src: /tmp/jq-1.5.tar.gz
+      dest: /tmp/
+      remote_src: yes
+
+  - name: Configure install
+    command: ./configure --disable-install-doc
+    args:
+      chdir: "/tmp/jq-{{jq_version}}"
+      creates: "/tmp/jq-{{jq_version}}/config.status"
+
+  - name: Build JQ
+    command: make
+    args:
+      chdir: "/tmp/jq-{{jq_version}}"
+      creates: "/tmp/jq-{{jq_version}}/jq"
+
+  - name: Install jq
+    become: true
+    command: make install
+    args:
+      chdir: "/tmp/jq-{{jq_version}}"
+      creates: /usr/local/bin/jq
+
+  - name: Remove build directory
+    file:
+      path: "/tmp/jq-{{jq_version}}"
+      state: absent
+
+  - name: Ensure JQ is executable
+    file:
+      path: /usr/local/bin/jq
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: use JQ to generate json output from isciadm command
+    shell: /sbin/iscsiadm -m session  -P 0 | /usr/local/bin/jq -R 'split(" ")|{protocol:.[0], instance:.[1], iscsi_host:.[2], iqn:.[3], isci_type:.[4] }' > /etc/ansible/facts.d/discover_iscsi.fact
+    args:
+      chdir: "/etc/ansible/facts.d/"
+      creates: "discover_iscsi.fact"
+
+#
+# iscsiadm -m session  -P 0 | /usr/local/bin/jq -R 'split(" ")|{protocol:.[0], instance:.[1], iscsi_host:.[2], iqn:.[3], isci_type:.[4] }'
+#
+#

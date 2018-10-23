@@ -1,0 +1,7 @@
+---
+# file: roles/common/tasks/main.
+
+- import_tasks: ntp.yaml
+- import_tasks: iptables.yaml
+- import_tasks: extra_packages.yaml
+- import_tasks: update_resolve.conf.yaml

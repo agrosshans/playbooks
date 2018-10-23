@@ -1,0 +1,9 @@
+---
+
+# install lsof
+- name: Install lsof
+  yum: name=lsof state=present
+
+# install bind-utils for command nslookup, etc...
+- name: Install bind-utils
+  yum: name=bind-utils state=present

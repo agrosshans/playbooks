@@ -1,0 +1,51 @@
+---
+# file: site.yaml
+
+- hosts: webservers
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+
+  roles:
+     - common
+     - ansible-role-httpd
+     - ansible-role-git
+
+- hosts: loadbalancers
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+
+  roles:
+     - common
+     - geerlingguy.nginx
+     - ansible-role-git
+
+- hosts: mailservers
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+
+  roles:
+     - common
+
+- hosts: raspberrypi
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+  
+  tasks:
+  - name: update dnsmasq server
+    blockinfile:
+      path: /usr/local/etc/hosts.dnsmasq
+      backup: yes
+      block: |
+        {{ item.ip }} {{ item.name }}
+      marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"  
+    with_items:
+      - { name: nginx1.lanathome.com, ip: 192.168.34.11 }
+      - { name: nginx2.lanathome.com, ip: 192.168.34.12 }
+      - { name: web1.lanathome.com, ip: 192.168.34.21 }
+      - { name: web2.lanathome.com, ip: 192.168.34.31 }
+      - { name: web3.lanathome.com, ip: 192.168.34.41 }
+      #validate: '/etc/init.d/dnsmasq restart'

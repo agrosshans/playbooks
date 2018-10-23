@@ -1,0 +1,22 @@
+firewall_allowed_tcp_ports:
+  - "22"
+  - "25"
+
+myhostname: '{{ facter_hostname }}'
+
+mydomain: '{{ facter_domain }}'
+
+mynetworks:
+  - 192.168.34.0/24,
+  -  127.0.0.0/8,
+  - 192.168.1.0/24
+
+mydestination: $myhostname, localhost.$mydomain, localhost
+
+mynetworks_style: subnet
+
+relayhost: smtp.free.fr
+
+debug_peer_level: 2
+
+relay_domains: $mydestination, gmail.com

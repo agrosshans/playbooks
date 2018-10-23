@@ -1,0 +1,18 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+#----------------#
+# Cluster Nodes: #
+#----------------#
+#
+10.16.143.151 ha-web1-ci
+192.168.36.151 ha-web1
+10.16.143.152 ha-web2-ci
+192.168.36.152 ha-web2
+10.16.143.153 ha-web3-ci
+192.168.36.153 ha-web3
+#------------------#
+# Management Node: #
+#------------------#
+#
+10.16.143.154 ha-web-mgmt-ci
+192.168.36.154 ha-web-mgmt

@@ -1,0 +1,27 @@
+---
+
+- hosts: ha-web1
+  become: yes
+  remote_user: root
+
+  tasks:
+
+  - name: ensure custom facts directory exists
+    file: >
+      path=/etc/ansible/facts.d
+      recurse=yes
+      state=directory
+
+  - name: install custom fact module for IP address
+    template: >
+      src=discover_iscsi.fact
+      dest=/etc/ansible/facts.d/discover_iscsi.fact
+      mode=0755
+
+  - name: reload ansible_local
+    setup: filter=ansible_local
+
+  - name: collect iscsi info # based on custom facts that runs: /sbin/iscsiadm -m discovery -t st -p 192.168.1.199:3260
+    debug:
+      var: "{{ ansible_local.discover_iscsi }}" 
+      verbosity: 4

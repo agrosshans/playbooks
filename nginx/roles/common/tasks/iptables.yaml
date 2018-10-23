@@ -1,0 +1,13 @@
+---
+# file: roles/common/tasks/iptables.yaml
+
+# configure iptables to allow http traffic
+- name: save iptables rules before amending then
+  action: shell /etc/init.d/iptables save
+
+- name: insert iptables template
+  template: src=iptables.j2 dest=/etc/sysconfig/iptables
+  when: ansible_distribution_major_version != '7'
+
+- name: reloadiptables rules after amending then
+  action: shell iptables-restore --verbose < /etc/sysconfig/iptables

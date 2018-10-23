@@ -1,0 +1,10 @@
+---
+# tasks file for ansible-manage-lvm
+- import_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+
+- import_tasks: centos.yml
+  when: ansible_os_family == "RedHat"
+
+- import_tasks: manage_lvm.yml
+  when: manage_lvm is defined and manage_lvm
