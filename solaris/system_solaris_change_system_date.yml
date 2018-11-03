@@ -1,0 +1,55 @@
+---
+
+- hosts: sol114-1.lanathome.com
+  become: yes
+  gather_facts: true
+
+  vars:
+  - luxor_run3_date : 1026 # means October, 26th
+
+
+  tasks:
+
+  - name: system_solaris_change_system_date | retrieve current system date from ansible_date_time
+    debug:
+      var=ansible_date_time.date # (eg. should returns current system date)
+
+  - name: system_solaris_change_system_date | retrieve current system time from ansible_date_time
+    debug:
+      var=ansible_date_time.time # (eg. should returns current system time)
+
+  - name: system_solaris_change_system_date | change date for luxor run
+    # usage: date [-u] mmddHHMM[[cc]yy][.SS]
+    command: /usr/bin/date "{{ luxor_run3_date }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+    register: changed_date_time
+
+  - debug:
+      msg: changed_date_time is {{ changed_date_time }}
+
+  - name: system_solaris_change_system_date | wait for 5 seconds before getting system date
+    wait_for: timeout=5
+
+  - name: system_solaris_change_system_date | gather_facts again to get new system date_time
+    setup: 
+      gather_subset='date_time'
+
+  - name: system_solaris_change_system_date | retrieve system date from ansible_date_time after update
+    debug:
+      var=ansible_date_time.date # (eg. should returns current system date after being modified)
+
+  - name: system_solaris_change_system_date | perform system reboot if system date was changed
+    command: /usr/sbin/shutdown -i6 -g0 -y
+    when: changed_date_time.changed
+    register: system_reboot_is_in_progress
+
+  - debug:
+      msg: system_reboot_is_in_progress is {{ system_reboot_is_in_progress }}
+
+  - name: system_solaris_change_system_date | wait_for_connection
+    wait_for_connection:
+      delay: 30
+      timeout: 300
+
+  - name: system_solaris_change_system_date | retrieve system date from ansible_date_time after reboot
+    debug:
+      var=ansible_date_time.date # (eg. should returns current system date after being modified)
