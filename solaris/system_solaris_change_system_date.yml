@@ -1,14 +1,28 @@
 ---
 
+- hosts: localhost
+
+  tasks:
+
+  - name: system_solaris_change_system_date | retrieve current localhost system time from ansible_date_time
+    set_fact:
+      current_time: "{{ansible_date_time.hour}}{{ansible_date_time.minute}}"
+    delegate_to: sol114-1.lanathome.com
+    delegate_facts: true
+
+
 - hosts: sol114-1.lanathome.com
   become: yes
   gather_facts: true
 
   vars:
-  - luxor_run3_date : 1026 # means October, 26th
-
+  - luxor_desired_date: "2018-10-26" # means October, 26th 2018
+  - luxor_formatted_desired_date: "{{ luxor_desired_date.split('-')[1] }}{{ luxor_desired_date.split('-')[2] }}"
 
   tasks:
+
+  - debug:
+      msg: luxor_formatted_desired_date is {{ luxor_formatted_desired_date }}
 
   - name: system_solaris_change_system_date | retrieve current system date from ansible_date_time
     debug:
@@ -18,10 +32,21 @@
     debug:
       var=ansible_date_time.time # (eg. should returns current system time)
 
+  - name: system_solaris_change_system_date | retrieve current system time from ansible_date_time.hour
+    debug:
+      var=ansible_date_time.hour # (eg. should returns current system time)
+
+  - name: system_solaris_change_system_date | retrieve current system time from ansible_date_time.minute
+    debug:
+      var=ansible_date_time.minute # (eg. should returns current system time)
+
   - name: system_solaris_change_system_date | change date for luxor run
     # usage: date [-u] mmddHHMM[[cc]yy][.SS]
-    command: /usr/bin/date "{{ luxor_run3_date }}{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+    command: /usr/bin/date "{{ luxor_formatted_desired_date }}{{ current_time }}"
     register: changed_date_time
+    when: 
+      - ansible_date_time.date != luxor_desired_date
+      - current_time != 'ansible_date_time.hour''ansible_date_time.minute' # 0920 != 1733
 
   - debug:
       msg: changed_date_time is {{ changed_date_time }}
@@ -44,12 +69,25 @@
 
   - debug:
       msg: system_reboot_is_in_progress is {{ system_reboot_is_in_progress }}
+    when:
+      - system_reboot_is_in_progress.changed
+      - system_reboot_is_in_progress.stdout == 'Shutdown started'
 
-  - name: system_solaris_change_system_date | wait_for_connection
+  - name: system_solaris_change_system_date | wait for system to come up (wait_for_connection set to 300 sec)
     wait_for_connection:
       delay: 30
       timeout: 300
+    when: system_reboot_is_in_progress.changed
 
   - name: system_solaris_change_system_date | retrieve system date from ansible_date_time after reboot
     debug:
       var=ansible_date_time.date # (eg. should returns current system date after being modified)
+    when: system_reboot_is_in_progress.changed
+
+  # - name: system_solaris_change_system_date | send a summary email
+  #   mail:
+  #     subject: System {{ ansible_hostname }} system date has been successfully changed to {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+  #     to: aurelien.grosshans@ubp.ch
+  #   delegate_to: localhost
+  #   become: no
+  #   when: system_reboot_is_in_progress.changed
