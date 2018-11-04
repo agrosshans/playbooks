@@ -1,0 +1,67 @@
+---
+
+- hosts: sol114-1.lanathome.com
+  become: yes
+  gather_facts: true
+
+  vars:
+  - syslog_server: sol114-1.lanathome.com
+
+  tasks:
+
+  - name: system_solaris soc | Determine which Syslog Daemon is in-use
+    shell: ps -ef | grep syslog | grep -v grep
+    register: running_syslog
+
+  - debug:
+      msg: "System {{ inventory_hostname }} is running {{ running_syslog.stdout.split()[-1] }}"
+
+  - name: system_solaris soc | Assert that Syslog Daemon is rsyslogd
+    assert:
+      that:
+      - running_syslog.stdout.split()[-1] == '/usr/lib/rsyslog/rsyslogd'
+      - "ansible_os_family == 'Solaris'"
+      msg: current running syslog daemon is 'rsyslogd'
+    ignore_errors: yes
+
+  - name: system_solaris soc | Assert that Syslog Daemon is syslogd
+    assert:
+      that:
+      - running_syslog.stdout.split()[-1] == '/usr/sbin/syslogd'
+      - "ansible_os_family == 'Solaris'"
+      msg: current running syslog daemon is 'syslogd'
+    ignore_errors: yes
+
+  - name: system_solaris soc | Add SOC syslog aggregator in /etc/syslog.conf
+    lineinfile:
+      path: /etc/syslog.conf
+      state: present
+      line: "\nauth.info\t\t\t\t\t@sol114-1.lanathome.com"
+      backup: yes
+    when: running_syslog.stdout.split()[-1] == '/usr/sbin/syslogd'
+
+  - name: system_solaris soc | Add SOC syslog aggregator in /etc/rsyslog.conf
+    lineinfile:
+      path: /etc/rsyslog.conf
+      state: present
+      line: "\nauth.info.* @@sol114-1.lanathome.com:514"
+      backup: yes
+    when: running_syslog.stdout.split()[-1] == '/usr/lib/rsyslog/rsyslogd'
+
+  - name: system_solaris soc | Restart syslogd
+    service:
+      name: svc:/system/system-log:default
+      state: restarted
+    when: running_syslog.stdout.split()[-1] == '/usr/sbin/syslogd'
+
+  - name: system_solaris soc | Restart rsyslogd
+    service:
+      name: svc:/system/system-log:rsyslog
+      state: restarted
+    when: running_syslog.stdout.split()[-1] == '/usr/lib/rsyslog/rsyslogd'
+
+# ps -ef | grep syslog
+# root  1163     1   0 18:22:25 ?           0:00 /usr/lib/rsyslog/rsyslogd
+
+# ps -ef | grep syslog
+# root   771     1   0 18:20:34 ?           0:00 /usr/sbin/syslogd
