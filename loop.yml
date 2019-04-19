@@ -1,0 +1,8 @@
+- hosts: all
+  gather_facts: no
+  vars:
+    loopme: ['somesing', 'someothersing']
+    concatenateme: 'toto'
+  tasks:
+    - debug:
+        msg: "{{ loopme | map('regex_replace','$',concatenateme) | list }}"

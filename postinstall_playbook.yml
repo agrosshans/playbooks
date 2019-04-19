@@ -10,4 +10,4 @@
   
   roles:
     - roles/common
-    - roles/monitoring
+#   - roles/monitoring

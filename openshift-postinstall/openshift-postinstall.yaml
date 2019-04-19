@@ -19,23 +19,6 @@
       regexp: '^SELINUXTYPE='
       line: 'SELINUXTYPE=targeted'
 
-  - name: openshift-postinstall | ensure NM_CONTROLLED is set to yes
-    lineinfile:
-      path: /etc/sysconfig/network-scripts/ifcfg-enp0s3
-      regexp: '^NM_CONTROLLED='
-      line: 'NM_CONTROLLED=yes'
-
-  - name: openshift-postinstall | ensure PEERDNS is set to yes
-    lineinfile:
-      path: /etc/sysconfig/network-scripts/ifcfg-enp0s3
-      regexp: '^PEERDNS='
-      line: 'PEERDNS=yes'
-
-  - name: openshift-postinstall | import RPM-GPG-KEY-CentOS-7
-    rpm_key:
-      state: present
-      key: /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
-
   - name: openshift-postinstall | install necessary packages
     yum:
       name: "{{ packages }}"
@@ -54,7 +37,33 @@
       - sos
       - psacct
       - ntp
+      - device-mapper-multipath
+      - iscsi-initiator-utils
+      - iscsi-initiator-utils-iscsiuio
+      - device-mapper-multipath-libs
+      - kpartx
+      - httpd-tools
+      - ebtables
+      - firewalld
+      - ipset-libs
+      - apr
+      - ipset
+      - firewalld-filesystem
+      - python-slip
+      - python-firewall
+      - apr-util
+      - python-slip-dbus
+      - NetworkManager
+      - openvswitch
 
+  - name: openshift-postinstall | set nofile
+    blockinfile:
+      path: /etc/security/limits.d/10-nofile.conf
+      create: yes
+      block: |
+        *          soft    nofile     4096
+        root       soft    nofile     unlimited
+        ansible     soft    nofile     unlimited
   - name: openshift-postinstall | configure ntp
     template:
       src: templates/ntp.conf
@@ -64,6 +73,46 @@
     service:
       name: ntpd
       state: started
+      enabled: yes
+
+  - name: openshift-postinstall | ensure NM_CONTROLLED is set to yes
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-ens192
+      regexp: '^NM_CONTROLLED='
+      line: 'NM_CONTROLLED=yes'
+
+  - name: openshift-postinstall | ensure PEERDNS is set to yes
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-ens192
+      regexp: '^PEERDNS='
+      line: 'PEERDNS=yes'
+
+  - name: openshift-postinstall | disable ipv6 set net.ipv6.conf.all.disable_ipv6 to 1
+    sysctl:
+      name: net.ipv6.conf.all.disable_ipv6
+      value: 1
+      sysctl_set: yes
+      state: present
+      reload: yes
+  - name: openshift-postinstall | disable ipv6 set net.ipv6.conf.default.disable_ipv6 to 1
+    sysctl:
+      name: net.ipv6.conf.default.disable_ipv6
+      value: 1
+      sysctl_set: yes
+      state: present
+      reload: yes
+
+  - name: openshift-postinstall | add DNS servers for external resolution
+    blockinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-ens192
+      block: |
+        DNS1="192.168.1.13"
+        DNS2="192.168.1.36"
+
+  - name: openshift-postinstall | restart NetworkManager.service
+    service:
+      name: NetworkManager
+      state: restarted
       enabled: yes
 
   - name: openshift-postinstall | add EPEL repository
@@ -98,8 +147,35 @@
       enablerepo: epel
     vars:
       packages:
-      - ansible
+     #- ansible # need to have ansible at < v2.7
       - pyOpenSSL
+
+  - name: openshift-postinstall | enable ansible 2.6 repo
+    yum:
+      name: centos-release-ansible26.noarch
+      state: present
+
+  - name: openshift-postinstall | install ansible 2.6
+    yum:
+      name: ansible
+      enablerepo: centos-ansible26
+
+  - name: openshift-postinstall | install pyOpenSSL
+    yum:
+      name: pyOpenSSL
+      enablerepo: centos-ansible26
+
+
+  - name: openshift-postinstall | install python-jinja2
+    yum:
+      name: python-jinja2
+      enablerepo: centos-ansible26
+
+
+  - name: openshift-postinstall | install python-lxml
+    yum:
+      name: python-lxml
+      enablerepo: centos-ansible26
 
   - name: openshift-postinstall | install docker
     yum:
@@ -108,12 +184,15 @@
     vars:
       packages:
       - docker-1.13.1
-      - python-docker
-
+      - python-docker-pycreds
+      - python-docker-py
+      
   - name: openshift-postinstall | create the docker-pool
     blockinfile:
       path: /etc/sysconfig/docker-storage-setup
       block: |
+        WIPE_SIGNATURES=true
+        STORAGE_DRIVER=overlay2
         DEVS=/dev/sdb
         VG=docker-vg
 
@@ -131,6 +210,12 @@
     shell: /usr/bin/docker-storage-setup --reset
 
 # - name: openshift-postinstall | change insecure-registry subnet
+
+  - name: openshift-postinstall | setup insecure-registry
+    lineinfile:
+      path: /etc/sysconfig/docker
+      regexp: "'OPTIONS='--selinux-enabled --log-driver=journald --signature-verification=false'"
+      line: "'OPTIONS='--selinux-enabled --insecure-registry 172.17.0.1/16 --log-driver=journald --signature-verification=false'"
 
   - name: openshift-postinstall | enable and start the docker service
     service:

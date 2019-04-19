@@ -1,0 +1,59 @@
+---
+- hosts: docker01.lanathome.com,docker02.lanathome.com
+  become: yes
+  gather_facts: false
+  
+  vars:
+    postfixcf: "master.cf"
+
+  tasks:
+
+  - name: ps -ef to find out basedir
+    shell: ps -ef | grep postfix
+    register: psef
+
+  - debug:
+      msg: var=psef.stdout_lines  
+      
+  - set_fact:
+      basename: "{{ psef.stdout_lines|trim|regex_findall('\\/\\w{1,}\\/\\w{1,}\\/\\w{1,}\\/\\bmaster\\b') | list }}"
+      cacheable: true
+
+  - debug:
+      msg: "postfix basename is : {{ basename }}"
+
+  - set_fact:
+      basedir: "{{ basename|trim|join|regex_replace('\\bmaster\\b') }}"
+      cacheable: true
+
+  - debug:
+      msg: "postfix basedir is : {{ basedir }}"
+
+  - debug:
+      msg: "basedir type of variable is : {{ basedir | type_debug }}"
+
+  - debug:
+      msg: "basename type of variable is : {{ basename | type_debug }}"
+
+#   - set_fact:
+#       postfixcf: "{{ basedir | map('regex_replace','$',postfixcf) | list }}"
+
+#   - debug:
+#       msg: "postfix configuration file is: {{ postfixcf }}"
+
+#   - debug:
+#       msg: "{{ basedir | map('regex_replace','$',postfixcf) | list }}"
+
+  - name: slurp /usr/libexec/postfix/master.cf
+    slurp:
+      src: "{{ basedir | map('regex_replace','$',postfixcf) | join(', ') }}"
+    register: postfix_cf
+
+  - debug:
+      msg: "{{ postfix_cf['content'] | b64decode }}"
+
+  - set_fact:
+     smtpenable: "{{ postfix_cf['content']|b64decode|trim|regex_findall('\\bsmtp\\b\\s+\\binet\\b') | list }}"
+
+
+  

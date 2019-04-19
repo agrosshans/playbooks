@@ -1,0 +1,25 @@
+---
+
+- hosts: all
+  become: yes
+  gather_facts: false
+
+  #  vars:
+  #  ansible_network_os: RedHat
+
+  tasks:
+  - name: set resolv.conf after openshift install fails
+    copy:
+      src: /Users/ngr/ansible/files/resolv.conf
+      dest: /etc/resolv.conf
+
+  - name: set /etc/hosts
+    copy:
+      src: /Users/ngr/ansible/files/hosts
+      dest: /etc/hosts
+
+  - name: set /etc/fstab
+    lineinfile:
+      path: /etc/fstab
+      line: 'nfs.lanathome.com:/volume1/openshift-registry /exports nfs rw,relatime,vers=3,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.1.36,mountvers=3,mountport=892,mountproto=udp,local_lock=none,addr=192.168.1.36'
+      state: present
