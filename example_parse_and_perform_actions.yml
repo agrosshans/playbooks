@@ -1,0 +1,24 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false
+
+  tasks:
+
+  - name: look for enp0s3 NIC Link is Down in /var/log/messages
+    lineinfile:
+      path: /var/log/messages
+      regexp: 'enp0s3 NIC Link is Down$'
+      state: present
+      line: 'enp0s3 NIC Link is Down'
+      backrefs: true
+    check_mode: true
+    register: presence
+    changed_when: presence.changed
+
+  - name: bring enp0s3 iface because it was down
+    command: /sbin/ifup enp0s3
+    when: presence.changed
+
+
+    

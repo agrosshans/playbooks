@@ -1,0 +1,21 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false
+
+  tasks:
+
+  - assert: { that: "ansible_os_family != 'RedHat'" }
+
+  - name: look for enp0s3 NIC Link is Down in /var/log/messages
+    lineinfile:
+    name: /var/log/messages
+    line: "enp0s3 NIC Link is Down"
+    state: present
+  check_mode: yes
+  register: parse_messages
+  failed_when: (parse_messages is changed) or (parse_messages is failed)
+
+  - name: Greet the /var/log/messagescontains "enp0s3 NIC Link is Down"
+    debug: msg="/var/log/messages contains: enp0s3 NIC Link is Down"
+    when: parse_messages.rc == 0

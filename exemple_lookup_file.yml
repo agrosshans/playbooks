@@ -19,7 +19,6 @@
       #selevel: s0
       #serole: system_u
       #setype: ssh_home_t
-
       #system_u:object_r:ssh_home_t:s0
 
   - name: Use of sefcontext to modify files in /home/ngr/.ssh

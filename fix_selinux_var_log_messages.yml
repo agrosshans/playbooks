@@ -1,0 +1,36 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false
+
+  tasks:
+
+  - name: look for permission denied on /var/log/audit/audit.log.1 
+    lineinfile:
+      path: /var/log/audit/audit.log.1
+      regexp: '(denied  { append })|(path\=\"\/var\/log\/messages\")'
+      state: present
+      line: '(denied  { append })|(path\=\"\/var\/log\/messages\")'
+      backrefs: true
+    check_mode: true
+    register: presence
+    changed_when: presence.changed
+
+  - name: use sefcontext to correct wrongly set SElinux context
+    sefcontext:
+      target: '/var/log/messages'
+      setype: 'unlabeled_t'  # for testing purpose unset with unlabeled_t \\
+                           # and rollback to correct value with var_log_t
+      state: present
+    register: sefcontext
+
+  - name: use restorecon to changes the type to 
+    command: restorecon -v /var/log/messages
+    register: restorecon
+    when: sefcontext.changed
+
+  - name: restart rsyslog
+    service:
+      name: rsyslog
+      state: restarted
+    when: restorecon.changed
