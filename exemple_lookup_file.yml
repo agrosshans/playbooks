@@ -1,0 +1,32 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false
+
+  vars:
+    mykey: "{{ lookup ('file', '/Users/ngr/.ssh/id_rsa.pub') }}"
+
+  tasks:
+
+  - name: copy my public key to remote user
+    copy:
+      content: "{{ mykey }}"
+      dest: /home/ngr/.ssh/authorized_keys
+      owner: ngr
+      group: wheel
+      mode: 0600
+      # -rw-------. ngr wheel unconfined_u:object_r:ssh_home_t:s0 /home/ngr/.ssh/authorized_keys
+      #selevel: s0
+      #serole: system_u
+      #setype: ssh_home_t
+
+      #system_u:object_r:ssh_home_t:s0
+
+  - name: Use of sefcontext to modify files in /home/ngr/.ssh
+    sefcontext:
+      target: '/home/ngr/.ssh(/.*)?'
+      setype: ssh_home_t
+      state: present
+
+  - name: Apply new SELinux file context to filesystem
+    command: restorecon -irv /home/ngr/.ssh
