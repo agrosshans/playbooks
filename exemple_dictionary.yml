@@ -1,0 +1,4 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false

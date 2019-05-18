@@ -5,7 +5,6 @@
 
   vars:
     mykey: "{{ lookup ('file', '/Users/ngr/.ssh/id_rsa.pub') }}"
-
   tasks:
 
   - name: copy my public key to remote user
