@@ -5,10 +5,16 @@
 
   tasks:
 
+#  - name: correct typo error in /etc/rsyslog.conf
+#    lineinfile:
+#      path: /etc/rsyslog.conf
+#      regexp: '^(.*)authpriv.\*.(.*)$'
+#      line: '\1authpriv.*\2'
+#      state: present
+#      backrefs: yes
+
   - name: correct typo error in /etc/rsyslog.conf
-    lineinfile:
+    replace:
       path: /etc/rsyslog.conf
-      regexp: '^(.*)authpriv.\*.(.*)$'
-      line: '\1authpriv.*\2'
-      state: present
-      backrefs: yes
+      regexp: '^(.*)authpriv.\*.(\s.*)$'
+      replace: '\1authpriv.*\2'
