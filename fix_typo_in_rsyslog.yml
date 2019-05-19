@@ -1,20 +1,32 @@
 ---
-- hosts: docker01.lanathome.com
-  become: yes
-  gather_facts: false
 
-  tasks:
+ - name: talk to all hosts just so we can learn about them
+   hosts: all
+   gather_facts: true
+   tasks:
+     - debug:
+        msg: "OS is os_{{ ansible_facts['distribution']+ansible_facts['distribution_major_version'] }}"
 
-#  - name: correct typo error in /etc/rsyslog.conf
-#    lineinfile:
-#      path: /etc/rsyslog.conf
-#      regexp: '^(.*)authpriv.\*.(.*)$'
-#      line: '\1authpriv.*\2'
-#      state: present
-#      backrefs: yes
+     - name: Classify hosts depending on their OS distribution
+       group_by:
+         key: os_{{ ansible_facts['distribution']+ansible_facts['distribution_major_version'] }}
 
-  - name: correct typo error in /etc/rsyslog.conf
-    replace:
-      path: /etc/rsyslog.conf
-      regexp: '^(.*)authpriv.\*.(\s.*)$'
-      replace: '\1authpriv.*\2'
+ # now just on the CentOS hosts...
+
+ - hosts: os_CentOS7
+   gather_facts: true
+   become: true
+   tasks:
+
+   - name: assert that we only apply to RedHat 7
+     assert:
+       that:
+         - "ansible_distribution               == 'CentOS'"
+         - "ansible_distribution_major_version == '7'"
+       fail_msg: "this playbook only applies to RHEL 7"
+         
+   - name: correct typo error in /etc/rsyslog.conf
+     replace:
+       path: /etc/rsyslog.conf
+       regexp: '^(.*)authpriv.\*.(\s.*)$'
+       replace: '\1authpriv.*\2'
