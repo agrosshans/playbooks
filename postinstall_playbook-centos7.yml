@@ -9,5 +9,5 @@
     ntp_enabled: true
   
   roles:
-    - roles/common
+    - roles/common-centos7
     - roles/monitoring
