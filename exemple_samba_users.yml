@@ -13,7 +13,6 @@
       || (echo '{{ item.password }}'; echo '{{ item.password }}')
       | smbpasswd -s -a {{ item.username }}
     register: smbpasswd
-    loop:
     changed_when: "'Added user' in smbpasswd.stdout"
-    loop_control:
-      label: "{{ item.username }}"
+    loop:
+      - { username: '{{ username }}', password: '{{ password }}' }
