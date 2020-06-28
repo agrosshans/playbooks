@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+
+  - name: Configure Samba users.
+    shell: >
+      (pdbedit --user={{ item.username }} 2>&1 > /dev/null)
+      || (echo '{{ item.password }}'; echo '{{ item.password }}')
+      | smbpasswd -s -a {{ item.username }}
+    register: smbpasswd
+    changed_when: "'Added user' in smbpasswd.stdout"
+    with_items: "{{ samba_users }}"
+    loop_control:
+      label: "{{ item.username }}"
