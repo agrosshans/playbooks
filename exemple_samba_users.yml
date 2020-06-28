@@ -14,6 +14,6 @@
       | smbpasswd -s -a {{ item.username }}
     register: smbpasswd
     changed_when: "'Added user' in smbpasswd.stdout"
-    with_items: "{{ samba_users }}"
-    loop_control:
-      label: "{{ item.username }}"
+    # with_items: "{{ samba_users }}"
+    # loop_control:
+    #   label: "{{ item.username }}"
