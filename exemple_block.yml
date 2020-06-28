@@ -1,0 +1,76 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: true
+
+  tasks:
+  - name: Attempt and graceful roll back demo
+    block:
+      - debug:
+          msg: 'I execute normally'
+
+      - name: populate service facts
+        service_facts:
+        register: services_state
+
+      - debug: var=services_state.ansible_facts.services["rsyslog.service"].state
+
+      - name: stop rsyslog
+        service:
+          name: rsyslog
+          state: stopped
+        register: rsyslog_status
+
+      - name: populate service facts
+        service_facts:
+        register: services_state
+
+      - debug: var=services_state.ansible_facts.services["rsyslog.service"].state
+
+      - name: ...rollout procedure... backuping rsyslog.conf
+        copy:
+          src: /etc/rsyslog.conf
+          dest: /etc/rsyslog.conf.backup
+          remote_src: yes
+
+      - name: ...rollout procedure... backuping rsyslog.conf
+        file:
+          path: /etc/rsyslog.conf
+          state: absent
+
+      - name: ...rollout procedure... reinstall rsyslog.conf
+        command: /bin/yum -y reinstall rsyslog
+
+      - name: ...rollout procedure... changing rsyslog.conf
+        lineinfile:
+          path: /etc/rsyslog.conf
+          line: authpriv.* @@remote-host:514
+
+    rescue:
+      - debug:
+          msg: 'I caught an error . doing a rollback'
+      - name: ...rollback procedure... restoring rsyslog.conf from backup
+        copy:
+          src: /etc/rsyslog.conf.backup
+          dest: /etc/rsyslog.conf
+          remote_src: yes
+      - name: ...rollback procedure... start rsyslog
+        service: 
+          name: rsyslog
+          state: started
+      - debug:
+          msg: 'I also never execute :-('
+    always:
+      - debug:
+          msg: "This always executes"
+
+      - name: start rsyslog
+        service:
+          name: rsyslog
+          state: started
+
+      - name: populate service facts
+        service_facts:
+        register: services_state
+
+      - debug: var=services_state.ansible_facts.services["rsyslog.service"].state

@@ -7,7 +7,10 @@
   vars:
     ntp_daemon: ntpd.service
     ntp_enabled: true
+    chrony_daemon: chronyd.service
+    chrony_enabled: true
+
   
   roles:
-    - roles/common-centos8
-    #- roles/monitoring
+    #- roles/common-centos8
+    - roles/monitoring

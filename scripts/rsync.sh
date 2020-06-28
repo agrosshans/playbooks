@@ -1,0 +1,1 @@
+/bin/rsync --delay-updates -F --compress --archive --rsync-path=/usr/bin/rsync  --rsh="/usr/bin/ssh -S none -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"  --out-format='<<CHANGED>>%i %n%L' /home/ansible/file1m ansible@docker01.lanathome.com:/home/ansible/file1m

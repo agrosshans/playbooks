@@ -1,0 +1,31 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: true
+  vars:
+     rsync_opt1: '--rsh=\"/usr/bin/ssh -S none -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null\"'
+
+  tasks:
+  - name: Transfer file from docker02 to docker01 
+    run_once: true
+    synchronize:
+        src: /home/ansible/file1m
+        dest: /home/ansible/file1m
+        rsync_path: /usr/bin/rsync
+    delegate_to: docker02.lanathome.com
+    register: rsync_output
+
+  - debug:
+      var: rsync_output
+    
+# /bin/rsync --delay-updates -F --compress --archive --rsync-path=/usr/bin/rsync  --rsh="/usr/bin/ssh -S none -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"  --out-format='<<CHANGED>>%i %n%L' /home/ansible/file1m ansible@docker01.lanathome.com:/home/ansible/file1m
+
+#/usr/local/Cellar/ansible/2.9.1//libexec/lib/python3.7/site-packages/ansible/modules/files/synchronize.py
+#536             #cmd.append('--rsh=%s' % ssh_cmd_str)
+#537             cmd.append('--rsh=\'%s\'' % ssh_cmd_str)
+
+
+#/usr/local/Cellar/ansible/2.9.1//libexec/lib/python3.7/site-packages/ansible/modules/files/synchronize.py
+#565     changed_marker = '<<CHANGED>>'
+#566     #cmd.append('--out-format=' + changed_marker + '%i %n%L')
+#567     cmd.append('--out-format=\'' + changed_marker + '%i %n%L\'')

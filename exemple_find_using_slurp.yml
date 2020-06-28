@@ -1,0 +1,23 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: false
+
+  tasks:
+
+  - name: parse /etc/rsyslog.conf
+    slurp:
+      src: /etc/rsyslog.conf
+    register: rsyslog
+
+  - debug:
+      msg: "{{ rsyslog.content | b64decode }}"
+
+  - name: assert that remediation didn't took place already
+    assert:
+      that:
+        - '"ActionQueueFileName" not in rsyslog.content|b64decode' 
+      fail_msg: "'remediation took place already - aborting"
+      success_msg: "'remediation didn't took place already - remediating"
+
+- import_playbook: example_when_file_exists.yml

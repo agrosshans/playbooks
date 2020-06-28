@@ -1,0 +1,31 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  
+  tasks:
+
+  # use regex_replace of ansible_date_time.iso8601 to remove ":" from the tar archive filename.
+  # this is due to tar-child-cannot-connect-xxx-resolve-failed limitation of tar.
+  - set_fact: 
+      tar_timestamp: "{{ ansible_date_time.iso8601 | regex_replace(':','-')  }}"
+
+  - debug: msg="{{ tar_timestamp }}"
+
+  - name: Take an archive of current directory /etc/syslog-ng/conf.d into etc/syslog-ng/conf.d-<ansible_date_time>.tgz
+    archive:
+      path: /etc/syslog-ng/conf.d
+      dest: /etc/syslog-ng/conf.d-{{ tar_timestamp }}.tgz
+
+  - name: Extract files/syslog-ng.conf.d.tar into /etc/syslog-ng/conf.d
+    unarchive:
+      remote_src: no
+      src: /Users/ngr/ansible/files/syslog-ng.conf.d.tar
+      dest: /etc/syslog-ng/conf.d
+
+  - name: Make sure syslog-ng is restarted
+    systemd:
+      state: restarted
+      name: syslog-ng

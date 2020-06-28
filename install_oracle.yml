@@ -1,0 +1,11 @@
+---
+
+- hosts: docker01.lanathome.com
+  become: yes
+  gather_facts: true
+
+  roles:
+    - role: oracle-database
+      oracle_database_version: 11g
+      oracle_database_release: 11.2.0.1.0
+      oracle_database_edition: SE

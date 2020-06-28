@@ -1,0 +1,60 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  
+  tasks:
+  - assert:
+      that:
+        - "ansible_distribution               == 'CentOS'"
+        - "ansible_distribution_major_version == '7'"
+      fail_msg: "this playbook only applies to RHEL 7"
+
+  - stat:
+      path: /etc/rsyslog.d/authpriv.conf
+    register: p
+
+  - debug:
+      msg: "/etc/rsyslog.d/authpriv.conf exists and is a regular file"
+    when: p.stat.isreg is defined
+
+  - debug:
+      msg: "/etc/rsyslog.d/authpriv.conf doesn't exists. Running rsyslog remediation"
+    when: p.stat.isreg is not defined
+
+  # - assert:
+  #     that:
+  #       - p.stat.isreg is not defined
+  #     success_msg: "/etc/rsyslog.d/authpriv.conf doesn't exists. Running rsyslog remediation"
+  #     fail_msg: "/etc/rsyslog.d/authpriv.conf exists and is a regular file. Exiting"
+
+  - name: Configure rsyslog
+    block:
+        - name: install rsyslog
+          yum:
+            name:
+            - rsyslog
+            state: present
+
+        - name: apply the rsyslog config template
+          template:
+            src: /Users/ngr/ansible/templates/rsyslog.conf.j2
+            dest: /etc/rsyslog.conf
+          register: resultrsyslog
+
+        - name: apply the rsyslog config template
+          template:
+            src: /Users/ngr/ansible/templates/authpriv.conf.j2
+            dest: /etc/rsyslog.d/authpriv.conf
+          register: resultauthpriv
+
+        - name: start service rsyslog and enable it
+          service:
+            name: rsyslog
+            state: restarted
+            enabled: True
+          when: resultrsyslog.changed    or    resultauthpriv.changed
+          
+    when: p.stat.isreg is not defined
