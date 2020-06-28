@@ -1,0 +1,15 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+
+  tasks:
+
+  - name: Extend the logical volume to XX and resize the underlying filesystem
+    lvol:
+      vg: rootvg
+      lv: var_log
+      size: 5g
+      resizefs: true
