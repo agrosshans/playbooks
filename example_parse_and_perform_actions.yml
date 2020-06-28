@@ -1,7 +1,9 @@
 ---
 - hosts: all
-  become: sudo
-  gather_facts: false
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
 
   tasks:
 
