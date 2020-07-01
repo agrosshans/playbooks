@@ -1,6 +1,6 @@
 ---
 - name: gather data
-  hosts: all
+  hosts: docker01.lanathome.com,docker02.lanathome.com
   become: yes
   become_method: sudo
   gather_facts: false
@@ -18,7 +18,7 @@
     register: host_name
 
 - name: email report
-  hosts: localhost
+  hosts: awx01.lanathome.com
   gather_facts: false
   vars:
     hosts_pattern: all
