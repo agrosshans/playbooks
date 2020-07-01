@@ -18,7 +18,7 @@
     register: host_name
 
 - name: email report
-  hosts: awx01.lanathome.com
+  hosts: localhost
   gather_facts: false
   vars:
     hosts_pattern: all
