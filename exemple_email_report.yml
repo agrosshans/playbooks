@@ -21,7 +21,7 @@
   hosts: localhost
   gather_facts: false
   vars:
-    hosts_pattern: linux_systems
+    hosts_pattern: all
   tasks:
 
   - name: Email report of systems with read only filesystems
