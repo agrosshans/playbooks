@@ -21,7 +21,7 @@
   hosts: localhost
   gather_facts: false
   vars:
-    hosts_pattern: all
+    hosts_pattern: docker01.lanathome.com,docker02.lanathome.com
   tasks:
 
   - name: Email report of systems with read only filesystems
