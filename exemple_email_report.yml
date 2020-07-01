@@ -1,0 +1,45 @@
+---
+- name: gather data
+  hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: false
+  tasks:
+
+  - name: Command to check systems for ead only mounts
+    shell: >
+      if grep "[[:space:]]ro[[:space:],]" /proc/mounts |
+        grep -v tmpfs > /dev/null ; then
+      echo 'read-only-FS';else echo 'all_good'; fi
+    register: read_only_check
+
+  - name: Get the output of `hostname`
+    command: hostname
+    register: host_name
+
+- name: email report
+  hosts: localhost
+  gather_facts: false
+  vars:
+    hosts_pattern: linux_systems
+  tasks:
+
+  - name: Email report of systems with read only filesystems
+    mail:
+      host: awx01.lanathome.com
+      port: 25
+      from: Aurélien Grosshans <aurelien.grosshans@sfr.fr>
+      to: Aurélien Grosshans <aurelien.grosshans@gmail.com>
+      subject: "[Read-Only FS] Testing Mail"
+      body: |
+        Report from playbook check_readonly_filesystems.
+
+        {% for host_item in lookup('inventory_hostnames', hosts_pattern, wantlist=True) %}
+        {% if read_only_check is defined and
+              read_only_check.stdout is defined and
+              read_only_check.stdout == "read-only-FS" %}
+        Read only - {{ hostvars[host_item]['inventory_hostname'] }} aka {{ hostvars[host_item]['host_name'].stdout }}
+        {% else %}
+        Good host - {{ hostvars[host_item]['inventory_hostname'] }} aka {{ hostvars[host_item]['host_name'].stdout }}
+        {% endif %}
+        {% endfor %}
