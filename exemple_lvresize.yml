@@ -33,7 +33,7 @@
       size: 7g
       resizefs: true
       shrink: no
-    when: ansible_lvm["lvs"]["appli-controlm"]["vg"] != ""
+    when: ansible_lvm["lvs"]["appli-controlmx"]["vg"] != ""
 
   - name: read facts again and display the new volume once increased
     setup: filter=ansible_lvm
