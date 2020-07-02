@@ -1,5 +1,5 @@
 ---
-- hosts: docker\*.lanathome.com
+- hosts: docker01.lanathome.com
   become: yes
   become_user: root
   become_method: sudo
