@@ -15,4 +15,4 @@
       path: /etc/yum.conf
       regexp: '^exclude='
       line: exclude=telnet
-    when: "docker in ansible_facts['hostname']"
+    when: "'docker' in inventory_hostname"
