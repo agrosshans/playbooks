@@ -15,4 +15,5 @@
       path: /etc/yum.conf
       regexp: '^exclude='
       line: exclude=telnet
+      insertafter: '^#distroverpkg'
     when: "'docker' in inventory_hostname"
