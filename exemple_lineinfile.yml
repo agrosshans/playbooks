@@ -1,0 +1,18 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+  
+  tasks:
+  
+  - name: exclude ansible package in /etc/yum.conf for alm hosts only
+    lineinfile:
+      path: /etc/yum.conf
+      regexp: '^exclude='
+      line: exclude=telnet
+    when: "'alm' in search ansible_hostname"
