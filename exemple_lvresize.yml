@@ -23,6 +23,9 @@
   - debug:
       msg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
 
+  - debug:
+      msg: 'filesystem size before increase: {{ ansible_lvm["lvs"]["appli-controlm"]["size_g"] }}'
+
   - set_fact:
       discovered_vg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
 
@@ -30,7 +33,7 @@
     lvol:
       vg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
       lv: appli-controlm
-      size: 2g
+      size: 3g
       resizefs: true
       shrink: no
     when: ansible_lvm["lvs"]["appli-controlm"]["vg"] != ""
@@ -46,4 +49,4 @@
       #               "vg": "rootvg"
       #           },
   - debug:
-      msg: 'filesystem size once increased: {{ ansible_lvm["lvs"]["appli-controlm"] }}'
+      msg: 'filesystem size once increased: {{ ansible_lvm["lvs"]["appli-controlm"]["size_g"] }}'
