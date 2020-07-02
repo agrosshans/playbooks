@@ -10,17 +10,58 @@
   
   tasks:
 
-  - name: stat /appli-controlm
-    stat: path=/dev/mapper/rootvg-appli--controlm
-    register: lvstat
+  # - name: stat /appli-controlm
+  #   stat: path=/dev/mapper/rootvg-appli--controlm
+  #   register: lvstat
 
-  - name: assert /dev/mapper/rootvg-appli--controlm exists
-    assert:
-      that: lvstat.stat.islnk
-    when: lvstat.stat.islnk is defined and lvstat.stat.islnk
+  # - name: assert /dev/mapper/rootvg-appli--controlm exists
+  #   assert:
+  #     that: lvstat.stat.islnk
+  #   when: lvstat.stat.islnk is defined and lvstat.stat.islnk
+
+  - debug:
+      msg: "{{ ansible_facts['ansible_lvm']['lvs']['appli-controlm'] }}"
+
+  - debug:
+      var: "vg={{ ansible_facts['ansible_lvm']['lvs']['appli-controlm'] }}"
 
   - name: Extend the logical volume appli-controlm and resize the underlying filesystem
     lvol:
       lv: appli-controlm
       size: 250m
       resizefs: true
+
+
+# ansible docker01.lanathome.com -i inventories/prd/hosts -m setup  -a 'filter=ansible_lvm' -u ansible -b
+# docker01.lanathome.com | SUCCESS => {
+#     "ansible_facts": {
+#         "ansible_lvm": {
+#             "lvs": {
+#                 "appli-controlm": {
+#                     "size_g": "0.20",
+#                     "vg": "rootvg"
+#                 },
+
+# {{ ansible_facts['ansible_lvm']['lvs']['appli-controlm'] }}
+
+# {{ ansible_facts['ansible_mounts']['mount']['/appli/controlm'] }}
+
+  # ansible_mounts
+
+  #           {
+  #               "block_available": 47729,
+  #               "block_size": 4096,
+  #               "block_total": 50345,
+  #               "block_used": 2616,
+  #               "device": "/dev/mapper/rootvg-appli--controlm",
+  #               "fstype": "xfs",
+  #               "inode_available": 102397,
+  #               "inode_total": 102400,
+  #               "inode_used": 3,
+  #               "mount": "/appli/controlm",
+  #               "options": "rw,relatime,attr2,inode64,noquota",
+  #               "size_available": 195497984,
+  #               "size_total": 206213120,
+  #               "uuid": "c25e1471-90dd-4c6d-8290-4b2559c4e686"
+  #           }
+  #       ],
