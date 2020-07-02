@@ -1,0 +1,17 @@
+---
+- hosts: docker01.lanathome.com
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+  
+  tasks:
+
+  - name: Extend the logical volume appli-controlm and resize the underlying filesystem
+    lvol:
+      lv: appli-controlm
+      size: 250m
+      resizefs: true
