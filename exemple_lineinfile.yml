@@ -15,5 +15,5 @@
       path: /etc/yum.conf
       regexp: '^exclude='
       line: exclude=telnet
-      insertafter: '^#distroverpkg'
+      insertafter: '^#distroverpkg=centos-release'
     when: "'docker' in inventory_hostname"
