@@ -10,6 +10,15 @@
   
   tasks:
 
+  - name: stat /appli-controlm
+    stat: path=/dev/mapper/rootvg-appli--controlm
+    register: lvstat
+
+  - name: assert /dev/mapper/rootvg-appli--controlm exists
+    assert:
+      that: lvstat.stat.islnk
+    when: lvstat.stat.islnk is defined and lvstat.stat.islnk
+
   - name: Extend the logical volume appli-controlm and resize the underlying filesystem
     lvol:
       lv: appli-controlm
