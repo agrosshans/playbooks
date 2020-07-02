@@ -1,5 +1,5 @@
 ---
-- hosts: docker01.lanathome.com
+- hosts: docker\*
   become: yes
   become_user: root
   become_method: sudo
@@ -15,5 +15,5 @@
       path: /etc/yum.conf
       regexp: '^exclude='
       line: exclude=telnet
-      insertafter: '^#distroverpkg=centos-release'
+      insertafter: '^distroverpkg=centos-release'
     when: "'docker' in inventory_hostname"
