@@ -42,7 +42,7 @@
       #   "ansible_lvm": {
       #       "lvs": {
       #           "appli-controlm": {
-      #               "size_g": "0.20",
+      #               "size_g": "7.0", <----- new filesystem appears here and should be 7g
       #               "vg": "rootvg"
       #           },
   - debug:
