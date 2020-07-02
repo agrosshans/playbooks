@@ -33,7 +33,7 @@
     lvol:
       vg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
       lv: appli-controlm
-      size: 3g
+      size: 4g
       resizefs: true
       shrink: no
     when: ansible_lvm["lvs"]["appli-controlm"]["vg"] != ""
