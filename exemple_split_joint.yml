@@ -1,0 +1,31 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+    lvsize: 1g
+  
+  tasks:
+  - name: read facts 
+    setup: filter=ansible_lvm
+    # "ansible_facts": {
+    #   "ansible_lvm": {
+    #       "lvs": {
+    #           "appli-controlm": {
+    #               "size_g": "0.20",
+    #               "vg": "rootvg"
+    #           },
+
+  - set_fact:
+      lvname: '{{ item.device.split("/")[-1]|regex_replace("--", "-")|regex_replace("^\w+\-", "") }}'
+      vgname: '{{ item.device.split("/")[-1]|regex_replace("--", "-")|regex_search("^\w+") }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
+    # datavg-appli-controlmx
+
+  - debug:
+      msg: 'lvname is: {{ lvname }} is in {{ vgname }}'

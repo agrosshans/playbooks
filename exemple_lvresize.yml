@@ -7,46 +7,119 @@
   force_handlers: true
 
   vars:
+    desired_lvsize: 1 # (integer in gb)
   
   tasks:
 
   - name: read facts 
-    setup: filter=ansible_lvm
-  
-      # "ansible_facts": {
-      #   "ansible_lvm": {
-      #       "lvs": {
-      #           "appli-controlm": {
-      #               "size_g": "0.20",
-      #               "vg": "rootvg"
-      #           },
-  - debug:
-      msg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
-
-  - debug:
-      msg: 'filesystem size before increase: {{ ansible_lvm["lvs"]["appli-controlm"]["size_g"] }}'
+    setup: filter=ansible_mounts
+    #     "ansible_facts": {
+    #         "ansible_mounts": [
+    #             {
+    #                 "device": "/dev/mapper/datavg-appli--controlm",
+    #                 "fstype": "xfs",
+    #                 "mount": "/appli/controlm",
+    #             }
 
   - set_fact:
-      discovered_vg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
+      device: '{{ item.device }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
 
-  - name: Extend the logical volume appli-controlm and resize the underlying filesystem
-    lvol:
-      vg: '{{ ansible_lvm["lvs"]["appli-controlm"]["vg"] }}'
-      lv: appli-controlm
-      size: 7g
-      resizefs: true
-      shrink: no
-    when: ansible_lvm["lvs"]["appli-controlm"]["vg"] != ""
+  - set_fact:
+      device_name: '{{ item.device.split("/")[-1] }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
 
-  - name: read facts again and display the new volume once increased
-    setup: filter=ansible_lvm
-  
-      # "ansible_facts": {
-      #   "ansible_lvm": {
-      #       "lvs": {
-      #           "appli-controlm": {
-      #               "size_g": "7.0", <----- new filesystem appears here and should be 7g
-      #               "vg": "rootvg"
-      #           },
+  - set_fact:
+      lvname: '{{ item.device.split("/")[-1]|regex_replace("--", "-")|regex_replace("^\w+\-", "") }}'
+      vgname: '{{ item.device.split("/")[-1]|regex_replace("--", "-")|regex_search("^\w+") }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
+    # item.device => /dev/mapper/datavg-appli--controlm
+    # datavg--appli-controlm
+    # lvname: appli-controlm
+    # vgname: datavg
+
+  - set_fact:
+      fstype: '{{ item.fstype }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
+
+  - set_fact:
+      mount: '{{ item.mount }}'
+    loop: "{{ ansible_mounts|flatten(levels=1) }}"
+    when: item.mount == '/appli/controlm'
+
   - debug:
-      msg: 'filesystem size once increased: {{ ansible_lvm["lvs"]["appli-controlm"]["size_g"] }}'
+      msg: 'found {{ lvname }} in {{ vgname }}'
+
+  - name: read facts 
+    setup: filter=ansible_lvm
+    # "ansible_facts": {
+    #   "ansible_lvm": {
+    #       "lvs": {
+    #           "appli-controlm": {
+    #               "size_g": "0.20",
+    #               "vg": "rootvg"
+    #           },
+
+  - set_fact:
+      current_lvsize: '{{ ansible_lvm["lvs"][lvname]["size_g"] }}'
+
+  - debug:
+      msg: 'filesystem size before increase: {{ current_lvsize }}g'
+
+  - debug:
+      msg: 'lvname is: "{{ lvname }} of {{ current_lvsize }}g with fstype: {{ fstype }} mounted under {{ mount }}"'
+      # 'device': '/dev/mapper/datavg-appli--controlm'
+
+  - name: 'Ensure lv is not already larger than lvsize'
+    assert:
+      that:
+        - current_lvsize is defined
+        - desired_lvsize is defined
+        - current_lvsize | int <= desired_lvsize | int
+      fail_msg: exiting. desired lv size {{ desired_lvsize }}g is smaller than current lv size {{ current_lvsize }}g.
+      success_msg: success. proceeding with lv + fs resize to {{ desired_lvsize }}g
+
+  - name: 'Resizing Logical Volume'
+    command: lvresize -L "{{ item.0 }}"g /dev/mapper/"{{ item.1 }}"
+    with_together:
+      - "{{ desired_lvsize }}"
+      - "{{ device_name }}"
+    when: current_lvsize | int < desired_lvsize | int
+
+  - name: 'Executing resize2fs'
+    command: resize2fs "{{ item.0 }}"
+    with_together:
+     - "{{ device }}"
+    when: (fstype == 'ext2') or (fstype == 'ext3') or (fstype == 'ext4')
+
+  - name: 'Executing xfs_growfs'
+    command: xfs_growfs "{{ item.0 }}"
+    with_together:
+     - "{{ mount }}"
+    when: fstype == 'xfs'
+
+  - meta: end_play
+
+# docker03.lanathome.com | SUCCESS => {
+#     "ansible_facts": {
+#         "ansible_mounts": [
+#             {
+#                 "block_available": 1811004,
+#                 "block_size": 4096,
+#                 "block_total": 1832448,
+#                 "block_used": 21444,
+#                 "device": "/dev/mapper/datavg-appli--controlm",
+#                 "fstype": "xfs",
+#                 "inode_available": 3670013,
+#                 "inode_total": 3670016,
+#                 "inode_used": 3,
+#                 "mount": "/appli/controlm",
+#                 "options": "rw,seclabel,relatime,attr2,inode64,noquota",
+#                 "size_available": 7417872384,
+#                 "size_total": 7505707008,
+#                 "uuid": "fdac6570-6cb2-4a3e-af10-2ae4b1536677"
+#             }
