@@ -1,0 +1,31 @@
+---
+
+- hosts: docker03.lanathome.com
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+    
+  tasks:
+
+  - debug:
+      msg: "uptime is : {{ ansible_uptime_seconds }} seconds"
+
+  - name: Reboot a machine that has uptime is >= 120 days
+    reboot:
+      reboot_timeout: 600
+      msg: "Reboot initiated by Ansible"
+    #when: ansible_facts['uptime_seconds']|int >= 10368000 # (24 hours x 3600 seconds) x 120 days)
+    when: ansible_facts['uptime_seconds']|int >= 140 # (24 hours x 3600 seconds) x 120 days)
+    register: action
+
+  - debug:
+      msg: "it took {{ action.elapsed }} seconds to the host to reboot"
+    when: action.changed
+
+  - debug:
+      msg: "new uptime is : {{ ansible_uptime_seconds }} seconds"
+    when: action.changed
