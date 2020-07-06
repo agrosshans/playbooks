@@ -12,11 +12,9 @@
   tasks:
 
   - debug:
-      msg: "uptime is : {{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+      msg: "current time is : {{ ansible_date_time.date }} {{ ansible_date_time.time }}"
 
-
-
-        #       "ansible_date_time": {
+        #     "ansible_date_time": {
         #     "date": "2020-07-06",
         #     "day": "06",
         #     "epoch": "1594068378",
