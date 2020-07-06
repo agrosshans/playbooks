@@ -26,8 +26,8 @@
       msg: "it took {{ action.elapsed }} seconds to the host to reboot"
     when: action.changed
 
-  - name: read facts 
-    setup: filter=uptime_seconds
+  - name: gather facts again 
+    setup:
     when: action.changed
 
   - debug:
