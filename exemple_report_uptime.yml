@@ -7,7 +7,6 @@
   gather_facts: true
   force_handlers: true
 
-
   vars:
     
   tasks:
