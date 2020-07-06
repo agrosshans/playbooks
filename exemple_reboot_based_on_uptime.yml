@@ -26,6 +26,9 @@
       msg: "it took {{ action.elapsed }} seconds to the host to reboot"
     when: action.changed
 
+  - name: read facts 
+    setup: filter=uptime_seconds
+
   - debug:
       msg: "new uptime is : {{ ansible_uptime_seconds }} seconds"
     when: action.changed
