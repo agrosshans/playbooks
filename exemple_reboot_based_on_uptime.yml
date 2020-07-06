@@ -28,6 +28,7 @@
 
   - name: read facts 
     setup: filter=uptime_seconds
+    when: action.changed
 
   - debug:
       msg: "new uptime is : {{ ansible_uptime_seconds }} seconds"
