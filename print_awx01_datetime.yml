@@ -1,0 +1,38 @@
+---
+
+- hosts: awx01.lanathome.com
+  become: yes
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+    
+  tasks:
+
+  - debug:
+      msg: "uptime is : {{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+
+
+
+        #       "ansible_date_time": {
+        #     "date": "2020-07-06",
+        #     "day": "06",
+        #     "epoch": "1594068378",
+        #     "hour": "22",
+        #     "iso8601": "2020-07-06T20:46:18Z",
+        #     "iso8601_basic": "20200706T224618431331",
+        #     "iso8601_basic_short": "20200706T224618",
+        #     "iso8601_micro": "2020-07-06T20:46:18.431389Z",
+        #     "minute": "46",
+        #     "month": "07",
+        #     "second": "18",
+        #     "time": "22:46:18",
+        #     "tz": "CEST",
+        #     "tz_offset": "+0200",
+        #     "weekday": "Monday",
+        #     "weekday_number": "1",
+        #     "weeknumber": "27",
+        #     "year": "2020"
+        # },
