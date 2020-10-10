@@ -6,6 +6,7 @@
   gather_facts: true
   force_handlers: true
 
+  tasks:
   - name: update datafeed package
     yum:
       name: datafeed
