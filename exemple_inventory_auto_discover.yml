@@ -1,0 +1,44 @@
+---
+- hosts: all
+  become: no
+  become_user: root
+  become_method: sudo
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+    
+  tasks:
+  - name: lookup if host is running an Oracle instance
+    stat:
+      path: /etc/oratab
+    register: is_oratab
+
+  - debug:
+      msg: "isreg is defined (/etc/oratab exists)"
+    when: is_oratab.stat.isreg is defined
+
+  - name: Find out what the remote machine's mounts are
+    slurp:
+      src: /Users/ngr/ansible/inventories/prd/hosts
+    register: inventory_hosts
+    delegate_to: localhost
+
+  - debug:
+      msg: "{{ inventory_hosts['content'] | b64decode }}"
+
+  # - name: update inventory files
+  #   lineinfile:
+  #     path: /Users/ngr/ansible/inventories/prd/hosts
+  #     insertafter: '^[oracle_hosts]$'
+  #     line: "{{ item }}"
+  #   when: is_oratab.stat.isreg is defined
+  #   delegate_to: localhost
+  #   loop: 
+  #     - docker01.lanathome.com
+
+  - name: show all the hosts matching the pattern, i.e. all but the group www
+    debug:
+      msg: "{{ item }}"
+    with_inventory_hostnames:
+      - oracle_hosts
