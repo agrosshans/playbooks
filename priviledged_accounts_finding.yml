@@ -1,0 +1,71 @@
+---
+
+#  $HeadURL:  $
+#  $Id: $
+#  $Author: $
+#  $LastChangedDate: $
+#  $LastChangedRevision: $
+#  $LastChangedBy: $
+#
+# ------------------------------------------------------------------------------
+
+- hosts: all
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: false
+  serial: 10
+
+  vars:
+    Findings: []
+
+  tasks:
+
+  - name: Slurp /etc/passwd
+    shell: cat /etc/passwd | awk -F ':' '{print $1}'
+    register: priviledged_accounts
+
+  - debug:
+      msg: "{{ priviledged_accounts }}"
+
+  - name: oracle-listener firewalld setup | retrieve listerner port
+    set_fact:
+      accounts: "{{ priviledged_accounts }}"
+  
+  - name: Print returned information
+    ansible.builtin.debug:
+      msg: "{{ accounts }}"
+
+  - name: Search for sudoers with priviledged accounts
+    find:
+      paths: /etc/sudoers.d
+      recurse: yes
+      file_type: file
+      contains: "{{ item }}"
+      # use_regex: yes
+    loop: "{{ accounts.stdout_lines }}"
+    register: sudoers_with_priviledged_accounts
+
+  
+  - name: Print returned information
+    ansible.builtin.debug:
+      msg: "{{ sudoers_with_priviledged_accounts }}"
+
+  - name: set_fact Findings
+    set_fact:
+      Findings: "{{ Findings + item['stdout_lines'] }}"
+    loop: "{{ sudoers_with_priviledged_accounts['results'] }}"
+
+  # servername; Findings
+  - name: Write local file
+    local_action:
+      module: copy
+      content: |      
+        {
+          "hostname": "{{ ansible_hostname }}",
+          "sudoers_with_priviledged_accounts findings": {{ Findings|to_json }},
+          "status": "success"
+        }
+      dest: "/home/ngr/tmp/priviledged_accounts/{{ ansible_hostname }}.json"
+      owner: ngr
+      group: unix
