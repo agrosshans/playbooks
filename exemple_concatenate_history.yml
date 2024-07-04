@@ -1,0 +1,18 @@
+---
+
+
+tasks:
+
+- name: "find logs"
+  find:
+    paths: /
+    patterns: 'download.log'
+    recurse: yes
+  register: find_logs
+
+- name: "list log files"
+  debug: var="{{ item.path }}"
+  with_items: "{{ find_logs.files }}
+
+
+730983
