@@ -3,16 +3,16 @@
 
 tasks:
 
-- name: "find logs"
+- name: "find _history"
   find:
-    paths: /
-    patterns: 'download.log'
+    paths: /home
+    patterns: '*_history'
     recurse: yes
-  register: find_logs
+  register: find_history
 
-- name: "list log files"
+- name: "list _history files"
   debug: var="{{ item.path }}"
-  with_items: "{{ find_logs.files }}
+  with_items: "{{ find_history.files }}
 
 
 730983
