@@ -22,3 +22,7 @@ tasks:
     src: "{{ item.path }}"
   with_items: "{{ find_history.files }}"
   register: content
+
+- name: Print returned information
+  ansible.builtin.debug:
+    msg: "{{ content['content'] | b64decode }}"
