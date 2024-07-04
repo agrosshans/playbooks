@@ -14,7 +14,11 @@ tasks:
 
 - name: "list _history files"
   debug: var="{{ item.path }}"
-  with_items: "{{ find_history.files }}
+  with_items: "{{ find_history.files }}"
 
 
-730983
+- name: Slup find_history.files
+  ansible.builtin.slurp:
+    src: "{{ item.path }}"
+  with_items: "{{ find_history.files }}"
+  register: content
