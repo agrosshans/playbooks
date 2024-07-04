@@ -4,8 +4,10 @@
 tasks:
 
 - name: "find _history"
-  find:
+  ansible.builtin.find:
     paths: /home
+    file_type: files
+    hidden: true
     patterns: '*_history'
     recurse: yes
   register: find_history
