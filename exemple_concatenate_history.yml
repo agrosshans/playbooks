@@ -1,28 +1,51 @@
 ---
 
+- name: find _history and produce json
 
-tasks:
+  hosts: rhel9-3.lanathome.com
+  become: yes
+  become_method: sudo
+  remote_user: ansible
+  gather_facts: false
 
-- name: "find _history"
-  ansible.builtin.find:
-    paths: /home
-    file_type: files
-    hidden: true
-    patterns: '*_history'
-    recurse: yes
-  register: find_history
+  vars:
 
-- name: "list _history files"
-  debug: var="{{ item.path }}"
-  with_items: "{{ find_history.files }}"
+  
+  tasks:
+  - name: find history files and ansible.builtin.slurp
+    block:
+    - name: "find _history"
+      ansible.builtin.find:
+        paths: '/home'
+        file_type: file
+        hidden: true
+        patterns: '*_history'
+        recurse: yes
+      register: find_history
+  
+    - name: "found _history files"
+      ansible.builtin.debug:
+        var=find_history.files
+    
+    - name: "list _history files"
+      ansible.builtin.debug:
+        var="{{ item }}"
+      loop: '{{ find_history.files }}'
+    
+    - name: "set_fact asdf"
+      set_fact:
+        asdf: "{{ item.path }}"
+      loop: "{{ find_history.files }}"
+  
 
-
-- name: Slup find_history.files
-  ansible.builtin.slurp:
-    src: "{{ item.path }}"
-  with_items: "{{ find_history.files }}"
-  register: content
-
-- name: Print returned information
-  ansible.builtin.debug:
-    msg: "{{ content['content'] | b64decode }}"
+    - name: Slup find_history.files
+      ansible.builtin.slurp:
+        src: '{{ item }}'
+      register: files
+      loop:
+        - /home/asdf/.bash_history
+        - /home/qwer/.bash_history
+      
+    - debug:
+        msg: "{{ item['content'] | b64decode }}"
+      loop: '{{ files["results"] }}'
