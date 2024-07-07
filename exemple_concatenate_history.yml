@@ -2,7 +2,7 @@
 
 - name: find _history and produce json
 
-  hosts: rhel9-3.lanathome.com
+  hosts: system_redhat
   become: yes
   become_method: sudo
   remote_user: ansible
