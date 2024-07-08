@@ -1,6 +1,6 @@
 ---
 
-- hosts: xxxxx
+- hosts: rhel9-3.lanathome.com
   become: yes
   become_method: sudo
   become_user: root
