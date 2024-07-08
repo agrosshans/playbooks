@@ -48,3 +48,22 @@
     - name: "debug"
       ansible.builtin.debug:
         msg: "{{ find_history.files | map(attribute='path')}}"
+
+
+  #  - name: "set_fact on retrieved _history files"
+  #    ansible.set_fact:
+  #      _history: "{{ find_history.files | map(attribute='path')}}"
+
+    - name: Slurp on retrieved _history files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: history_content
+      loop: "{{ find_history.files | map(attribute='path')}}"
+
+    - name: Display the value type of history_content
+      ansible.builtin.debug:
+        msg: "history_content={{ history_content }} / Data type={{ history_content | type_debug }}"
+
+    - name: Print returned information
+      ansible.builtin.debug:
+        msg: "{{ history_content['content'] | b64decode }}" # <--- Data type=dict
