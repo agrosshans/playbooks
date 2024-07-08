@@ -1,51 +1,50 @@
 ---
 
-- name: find _history and produce json
-
-  hosts: system_redhat
+- hosts: xxxxx
   become: yes
   become_method: sudo
-  remote_user: ansible
+  become_user: root
   gather_facts: false
+  gather_subset: min
 
-  vars:
-
-  
   tasks:
-  - name: find history files and ansible.builtin.slurp
+
+  - name: Collect only selected facts
+    ansible.builtin.setup:
+      gather_subset: min
+
+  - name: recursively find *_history files
     block:
-    - name: "find _history"
+    - name: Find files
       ansible.builtin.find:
         paths: '/home'
-        file_type: file
-        hidden: true
         patterns: '*_history'
+        file_type: file
+        hidden: yes
         recurse: yes
       register: find_history
-  
-    - name: "found _history files"
+
+    - name: Display the value type of find_history
       ansible.builtin.debug:
-        var=find_history.files
-    
+        msg: "find_history={{ find_history }} / Data type={{ find_history | type_debug }}"
+
+    - name: "display find_history"
+      ansible.builtin.debug:
+        var=find_history # <--- Data type=dict
+
+    - name: Display the value type of find_history.files
+      ansible.builtin.debug:
+        msg: "find_history.files={{ find_history.files }} / Data type={{ find_history.files | type_debug }}"
+
+    - name: "display find_history.files"
+      ansible.builtin.debug:
+        var=find_history.files # <--- Data type=list
+
     - name: "list _history files"
       ansible.builtin.debug:
-        var="{{ item }}"
-      loop: '{{ find_history.files }}'
-    
-    - name: "set_fact asdf"
-      set_fact:
-        asdf: "{{ item.path }}"
-      loop: "{{ find_history.files }}"
-  
+        var=item.path
+      loop: "{{ find_history.files }}" # <--- Data type=list
 
-    - name: Slup find_history.files
-      ansible.builtin.slurp:
-        src: '{{ item }}'
-      register: files
-      loop:
-        - /home/asdf/.bash_history
-        - /home/qwer/.bash_history
-      
-    - debug:
-        msg: "{{ item['content'] | b64decode }}"
-      loop: '{{ files["results"] }}'
+    - name: "debug"
+      ansible.builtin.debug:
+        msg: "{{ find_history.files | map(attribute='path')}}"
