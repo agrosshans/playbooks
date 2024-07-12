@@ -1,0 +1,13 @@
+{# {{ input }} #}
+{# {{ find_history.files }} #}
+[
+{% for file in input %}
+{
+    "hostname": "{{ ansible_hostname }}",
+    "username": "{{ find_history.files[loop.index -1].pw_name }}",
+    "content": {{ file.content | b64decode | to_json }},
+    "status": "success"
+},
+{% endfor %}
+{}
+]
