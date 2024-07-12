@@ -49,21 +49,36 @@
       ansible.builtin.debug:
         msg: "{{ find_history.files | map(attribute='path')}}"
 
-
-  #  - name: "set_fact on retrieved _history files"
-  #    ansible.set_fact:
-  #      _history: "{{ find_history.files | map(attribute='path')}}"
-
-    - name: Slurp on retrieved _history files
+    - name: "Slurp found history files"
       ansible.builtin.slurp:
-        src: "{{ item }}"
-      register: history_content
+        src: '{{ item }}'
+      register: files
       loop: "{{ find_history.files | map(attribute='path')}}"
 
-    - name: Display the value type of history_content
-      ansible.builtin.debug:
-        msg: "history_content={{ history_content }} / Data type={{ history_content | type_debug }}"
+#   - name: "display find_history.files"
+#     ansible.builtin.debug:
+#       var=find_history.files
 
-    - name: Print returned information
-      ansible.builtin.debug:
-        msg: "{{ history_content['content'] | b64decode }}" # <--- Data type=dict
+#   - name: "display find_history.files[0]"
+#     ansible.builtin.debug:
+#       var=find_history.files[0].pw_name
+
+    - name: "Loop of jinja template found history files"
+      ansible.builtin.template:
+        src: templates/history_files.j2
+        dest: "/home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json"
+      vars:
+        - input: "{{ files.results }}"
+
+    - name: Write results to local file
+      ansible.builtin.fetch:
+        src: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
+        dest: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
+        flat: yes
+
+    - name: Finally Write local file
+      local_action:
+        module: copy
+        src: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
+        dest: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
+
