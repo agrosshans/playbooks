@@ -1,0 +1,95 @@
+---
+
+- hosts: rhel9-3.lanathome.com
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: false
+  gather_subset: min
+
+  vars:
+    path: "/home/ansible/.bash_history"
+    find_history: {
+        files: [
+            {
+                "atime": 1720749619.8238258,
+                "ctime": 1720381990.1922371,
+                "dev": 64771,
+                "gid": 1000,
+                "gr_name": "ngr",
+                "inode": 137,
+                "isblk": false,
+                "ischr": false,
+                "isdir": false,
+                "isfifo": false,
+                "isgid": false,
+                "islnk": false,
+                "isreg": true,
+                "issock": false,
+                "isuid": false,
+                "mode": "0600",
+                "mtime": 1720381990.1922371,
+                "nlink": 1,
+                "path": "/home/ngr/.bash_history",
+                "pw_name": "ngr",
+                "rgrp": false,
+                "roth": false,
+                "rusr": true,
+                "size": 5587,
+                "uid": 1000,
+                "wgrp": false,
+                "woth": false,
+                "wusr": true,
+                "xgrp": false,
+                "xoth": false,
+                "xusr": false
+            },
+            {
+                "atime": 1720749620.6551178,
+                "ctime": 1720382169.8834336,
+                "dev": 64771,
+                "gid": 10,
+                "gr_name": "wheel",
+                "inode": 453,
+                "isblk": false,
+                "ischr": false,
+                "isdir": false,
+                "isfifo": false,
+                "isgid": false,
+                "islnk": false,
+                "isreg": true,
+                "issock": false,
+                "isuid": false,
+                "mode": "0600",
+                "mtime": 1720382169.8834336,
+                "nlink": 1,
+                "path": "/home/ansible/.bash_history",
+                "pw_name": "ansible",
+                "rgrp": false,
+                "roth": false,
+                "rusr": true,
+                "size": 10,
+                "uid": 1001,
+                "wgrp": false,
+                "woth": false,
+                "wusr": true,
+                "xgrp": false,
+                "xoth": false,
+                "xusr": false
+            }
+        ]
+    }
+
+  tasks:
+
+    - name: Display the value type of find_history.files
+      ansible.builtin.debug:
+        msg: "find_history.files={{ find_history.files }} / Data type={{ find_history.files | type_debug }}"
+
+    - name: display find_history.files
+      ansible.builtin.debug:
+        var=find_history.files # <--- Data type=list
+
+    - name: remove path 
+      debug:
+        msg: "{{ find_history.files | reject('search', path)}}"
