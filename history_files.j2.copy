@@ -1,13 +1,15 @@
 {# {{ input }} #}
-{# {{ bash_history_files_filtered }} #}
+{# {{ find_history.files }} #}
+{{ bash_history_files_filtered }}
 
+
+{# 
 
 [
 {% for file in input %}
 {
     "hostname": "{{ ansible_hostname }}",
-    "username": "{{ find_history.files[loop.index -1].pw_name }}",
-    "path": "{{ file.path }}",
+    "username": "{{ bash_history_files_filtered.files[loop.index -1].pw_name }}",
     "content": {{ file.content | b64decode | to_json }},
     "status": "success"
 },
@@ -15,3 +17,4 @@
 {}
 ]
 
+#}
