@@ -17,43 +17,49 @@
     block:
     - name: Find files
       ansible.builtin.find:
-        paths: '/home'
+        paths:
+        - '/home'
+        - '/root'
         patterns: '*_history'
         file_type: file
         hidden: yes
         recurse: yes
       register: find_history
 
-    - name: Display the value type of find_history
-      ansible.builtin.debug:
-        msg: "find_history={{ find_history }} / Data type={{ find_history | type_debug }}"
+  - name: Display the value type of find_history
+    ansible.builtin.debug:
+      msg: "find_history={{ find_history }} / Data type={{ find_history | type_debug }}"
 
-    - name: "display find_history"
-      ansible.builtin.debug:
-        var=find_history # <--- Data type=dict
+  - name: Display the value type of find_history
+    ansible.builtin.debug:
+      msg: "find_history={{ find_history }} / Data type={{ find_history | type_debug }}"
 
-    - name: Display the value type of find_history.files
-      ansible.builtin.debug:
-        msg: "find_history.files={{ find_history.files }} / Data type={{ find_history.files | type_debug }}"
+  - name: "display find_history"
+    ansible.builtin.debug:
+      var=find_history # <--- Data type=dict
 
-    - name: "display find_history.files"
-      ansible.builtin.debug:
-        var=find_history.files # <--- Data type=list
+  - name: Display the value type of find_history.files
+    ansible.builtin.debug:
+      msg: "find_history.files={{ find_history.files }} / Data type={{ find_history.files | type_debug }}"
 
-    - name: "list _history files"
-      ansible.builtin.debug:
-        var=item.path
-      loop: "{{ find_history.files }}" # <--- Data type=list
+  - name: "display find_history.files"
+    ansible.builtin.debug:
+      var=find_history.files # <--- Data type=list
 
-    - name: "debug"
-      ansible.builtin.debug:
-        msg: "{{ find_history.files | map(attribute='path')}}"
+  - name: "list _history files"
+    ansible.builtin.debug:
+      var=item.path
+    loop: "{{ find_history.files }}" # <--- Data type=list
 
-    - name: "Slurp found history files"
-      ansible.builtin.slurp:
-        src: '{{ item }}'
-      register: files
-      loop: "{{ find_history.files | map(attribute='path')}}"
+  - name: "debug"
+    ansible.builtin.debug:
+      msg: "{{ find_history.files | map(attribute='path')}}"
+
+  - name: "Slurp found history files"
+    ansible.builtin.slurp:
+      src: '{{ item }}'
+    register: files
+    loop: "{{ find_history.files | map(attribute='path')}}"
 
 #   - name: "display find_history.files"
 #     ansible.builtin.debug:
@@ -63,22 +69,20 @@
 #     ansible.builtin.debug:
 #       var=find_history.files[0].pw_name
 
-    - name: "Loop of jinja template found history files"
-      ansible.builtin.template:
-        src: templates/history_files.j2
-        dest: "/home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json"
-      vars:
-        - input: "{{ files.results }}"
-
-    - name: Write results to local file
-      ansible.builtin.fetch:
-        src: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
-        dest: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
-        flat: yes
-
-    - name: Finally Write local file
-      local_action:
-        module: copy
-        src: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
-        dest: /home/xxxx/utils/tmp/shell_history/{{ ansible_hostname }}.json
+  - name: "Loop of jinja template found history files"
+    ansible.builtin.template:
+      src: /users/ngr/ansible_run/templates/history_files.j2
+      dest: "/home/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json"
+    vars:
+      - input: "{{ files.results }}"
+  - name: Write results to local file
+    ansible.builtin.fetch:
+      src: /home/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
+      dest: /Users/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
+      flat: yes
+#   - name: Finally Write local file
+#     local_action:
+#       module: copy
+#       src: /home/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
+#       dest: /Users/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
 
