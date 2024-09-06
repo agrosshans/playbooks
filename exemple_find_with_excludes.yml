@@ -8,88 +8,82 @@
   gather_subset: min
 
   vars:
-    path: "/home/ansible/.bash_history"
-    find_history: {
-        files: [
-            {
-                "atime": 1720749619.8238258,
-                "ctime": 1720381990.1922371,
-                "dev": 64771,
-                "gid": 1000,
-                "gr_name": "ngr",
-                "inode": 137,
-                "isblk": false,
-                "ischr": false,
-                "isdir": false,
-                "isfifo": false,
-                "isgid": false,
-                "islnk": false,
-                "isreg": true,
-                "issock": false,
-                "isuid": false,
-                "mode": "0600",
-                "mtime": 1720381990.1922371,
-                "nlink": 1,
-                "path": "/home/ngr/.bash_history",
-                "pw_name": "ngr",
-                "rgrp": false,
-                "roth": false,
-                "rusr": true,
-                "size": 5587,
-                "uid": 1000,
-                "wgrp": false,
-                "woth": false,
-                "wusr": true,
-                "xgrp": false,
-                "xoth": false,
-                "xusr": false
-            },
-            {
-                "atime": 1720749620.6551178,
-                "ctime": 1720382169.8834336,
-                "dev": 64771,
-                "gid": 10,
-                "gr_name": "wheel",
-                "inode": 453,
-                "isblk": false,
-                "ischr": false,
-                "isdir": false,
-                "isfifo": false,
-                "isgid": false,
-                "islnk": false,
-                "isreg": true,
-                "issock": false,
-                "isuid": false,
-                "mode": "0600",
-                "mtime": 1720382169.8834336,
-                "nlink": 1,
-                "path": "/home/ansible/.bash_history",
-                "pw_name": "ansible",
-                "rgrp": false,
-                "roth": false,
-                "rusr": true,
-                "size": 10,
-                "uid": 1001,
-                "wgrp": false,
-                "woth": false,
-                "wusr": true,
-                "xgrp": false,
-                "xoth": false,
-                "xusr": false
-            }
-        ]
-    }
+    find_history_excluded: 
+      - "/home/ansible/.bash_history"
+
 
   tasks:
+
+  - name: Collect only selected facts
+    ansible.builtin.setup:
+      gather_subset: min
+
+  - name: Empty output directory from previous run
+    ansible.builtin.file:
+      dest: /home/ngr/ansible_run/output/shell_history/
+      state: absent
+
+  - name: recursively find *_history files
+    block:
+    - name: Find files
+      ansible.builtin.find:
+        paths: '/home'
+        patterns: '*_history'
+        file_type: file
+        hidden: yes
+        recurse: yes
+      register: find_history
 
     - name: Display the value type of find_history.files
       ansible.builtin.debug:
         msg: "find_history.files={{ find_history.files }} / Data type={{ find_history.files | type_debug }}"
 
-    - name: display find_history.files
+    - name: display find_history_excluded
       ansible.builtin.debug:
-        var=find_history.files # <--- Data type=list
+        var: find_history_excluded # <--- Data type=list
 
-    - name: remove path 
+    - name: Display the value type of find_history_excluded
+      ansible.builtin.debug:
+        msg: "find_history_excluded={{ find_history_excluded }} / Data type={{ find_history_excluded | type_debug }}"
+
+    - name: Exclude specified files from the list
+      set_fact:
+        bash_history_files_filtered: "{{ find_history.files | rejectattr('path', 'in', find_history_excluded) | list }}"
+
+    - name: Debug the filtered list of .bash_history files
       debug:
-        msg: "{{ find_history.files | reject('search', path)}}"
+        var: bash_history_files_filtered
+
+    - name: "Slurp found history files"
+      ansible.builtin.slurp:
+        src: '{{ item.path }}'
+      register: files
+      loop: "{{ bash_history_files_filtered }}"
+
+#   - name: "display find_history.files"
+#     ansible.builtin.debug:
+#       var=find_history.files
+
+#   - name: "display find_history.files[0]"
+#     ansible.builtin.debug:
+#       var=find_history.files[0].pw_name
+
+    - name: Create empty output directory
+      ansible.builtin.file:
+        dest: /home/ngr/ansible_run/output/shell_history
+        state: directory
+        owner: ngr
+
+    - name: "Loop of jinja template found history files"
+      ansible.builtin.template:
+        src: /Users/ngr/ansible_run/playbooks/history_files.j2
+        dest: "/home/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json"
+      vars:
+        - input: "{{ files.results }}"
+
+    - name: Write results to local file
+      ansible.builtin.fetch:
+        src: /home/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
+        dest: /Users/ngr/ansible_run/output/shell_history/{{ ansible_hostname }}.json
+        flat: yes
+
